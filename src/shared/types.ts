@@ -188,10 +188,18 @@ export interface GeneralSettings {
 }
 
 export interface AppearanceSettings {
-  theme: 'light' | 'dark'
+  /** system 跟随系统 */
+  theme: 'light' | 'dark' | 'system'
+  /** 主色调 */
+  accent: 'green' | 'blue' | 'purple' | 'orange' | 'rose'
+  /** 封面圆角，0–40 */
   coverRadius: number
-  /** comfortable ≈ 145px 封面，compact ≈ 128px */
-  gridDensity: 'comfortable' | 'compact'
+  /** 每行封面的最小宽度，越大每行越少 */
+  gridMin: number
+  /** 圆角风格：圆角 / 超椭圆 */
+  cornerStyle: 'round' | 'squircle'
+  /** 侧栏宽度 */
+  sidebarWidth: number
 }
 
 export interface ConvertSettings {

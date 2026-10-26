@@ -323,12 +323,54 @@ export default function Settings(): React.ReactElement {
 
             <section className="set-section">
               <h2 className="set-h2">外观</h2>
+              <Row label="主题">
+                <div className="seg">
+                  {[
+                    { k: 'light', t: '浅色' },
+                    { k: 'dark', t: '深色' },
+                    { k: 'system', t: '跟随系统' }
+                  ].map((item) => (
+                    <button
+                      key={item.k}
+                      className={`seg-item${draft.appearance.theme === item.k ? ' is-active' : ''}`}
+                      onClick={() => {
+                        patch('appearance', { theme: item.k as 'light' | 'dark' | 'system' })
+                        applyAppearance({ ...draft.appearance, theme: item.k as 'light' | 'dark' | 'system' })
+                      }}
+                    >
+                      {item.t}
+                    </button>
+                  ))}
+                </div>
+              </Row>
+              <Row label="主色调">
+                <div className="accent-picker">
+                  {[
+                    { k: 'green', c: '#07c160' },
+                    { k: 'blue', c: '#1e80ff' },
+                    { k: 'purple', c: '#7c5cff' },
+                    { k: 'orange', c: '#ff7a45' },
+                    { k: 'rose', c: '#f43f5e' }
+                  ].map((item) => (
+                    <button
+                      key={item.k}
+                      className={`accent-dot${draft.appearance.accent === item.k ? ' is-on' : ''}`}
+                      style={{ background: item.c }}
+                      aria-label={item.k}
+                      onClick={() => {
+                        patch('appearance', { accent: item.k as 'green' })
+                        applyAppearance({ ...draft.appearance, accent: item.k as 'green' })
+                      }}
+                    />
+                  ))}
+                </div>
+              </Row>
               <Row label="封面圆角">
                 <div className="set-inline">
                   <input
                     type="range"
                     min={0}
-                    max={16}
+                    max={40}
                     value={draft.appearance.coverRadius}
                     onChange={(e) => {
                       const v = Number(e.target.value)
@@ -339,30 +381,58 @@ export default function Settings(): React.ReactElement {
                   <span className="set-ro set-num">{draft.appearance.coverRadius}px</span>
                 </div>
               </Row>
-              <Row label="网格密度">
-                <div className="seg">
-                  <button
-                    className={`seg-item${draft.appearance.gridDensity === 'comfortable' ? ' is-active' : ''}`}
-                    onClick={() => {
-                      patch('appearance', { gridDensity: 'comfortable' })
-                      applyAppearance({ ...draft.appearance, gridDensity: 'comfortable' })
+              <Row label="封面宽度">
+                <div className="set-inline">
+                  <input
+                    type="range"
+                    min={100}
+                    max={220}
+                    step={4}
+                    value={draft.appearance.gridMin}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      patch('appearance', { gridMin: v })
+                      applyAppearance({ ...draft.appearance, gridMin: v })
                     }}
-                  >
-                    舒适
-                  </button>
-                  <button
-                    className={`seg-item${draft.appearance.gridDensity === 'compact' ? ' is-active' : ''}`}
-                    onClick={() => {
-                      patch('appearance', { gridDensity: 'compact' })
-                      applyAppearance({ ...draft.appearance, gridDensity: 'compact' })
-                    }}
-                  >
-                    紧凑
-                  </button>
+                  />
+                  <span className="set-ro set-num">{draft.appearance.gridMin}px</span>
                 </div>
               </Row>
-              <Row label="主题">
-                <span className="set-ro">浅色</span>
+              <Row label="圆角风格">
+                <div className="seg">
+                  {[
+                    { k: 'squircle', t: '超椭圆' },
+                    { k: 'round', t: '圆角' }
+                  ].map((item) => (
+                    <button
+                      key={item.k}
+                      className={`seg-item${draft.appearance.cornerStyle === item.k ? ' is-active' : ''}`}
+                      onClick={() => {
+                        patch('appearance', { cornerStyle: item.k as 'round' })
+                        applyAppearance({ ...draft.appearance, cornerStyle: item.k as 'round' })
+                      }}
+                    >
+                      {item.t}
+                    </button>
+                  ))}
+                </div>
+              </Row>
+              <Row label="侧栏宽度">
+                <div className="set-inline">
+                  <input
+                    type="range"
+                    min={220}
+                    max={380}
+                    step={2}
+                    value={draft.appearance.sidebarWidth}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      patch('appearance', { sidebarWidth: v })
+                      applyAppearance({ ...draft.appearance, sidebarWidth: v })
+                    }}
+                  />
+                  <span className="set-ro set-num">{draft.appearance.sidebarWidth}px</span>
+                </div>
               </Row>
             </section>
           </>

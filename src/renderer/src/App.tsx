@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AppSettings, CollectionsStore, LibraryPayload, UpdateInfo } from '../../shared/types'
 import { CH } from '../../shared/ipc'
 import logo from './assets/logo.svg'
-import { applyAppearance } from './lib/appearance'
+import { applyAppearance, watchSystemTheme } from './lib/appearance'
 import { AppCtx, type AppApi, type Route } from './app/context'
 import {
   IconBack, IconBookmark, IconClose, IconConvert, IconDevice,
@@ -78,6 +78,8 @@ export default function App(): React.ReactElement {
   const [dialog, setDialog] = useState<DialogRequest | null>(null)
   /** 内置阅读器记录的进度，优先于 calibre 自己的 pos_frac */
   const [readPos, setReadPos] = useState<Record<string, number>>({})
+  /** 跟随系统时，系统换主题要能实时生效 */
+  const appearanceRef = useRef<ReturnType<typeof Object> | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const route = stack[stack.length - 1]
@@ -212,6 +214,7 @@ export default function App(): React.ReactElement {
       .invoke<AppSettings | null>(CH.settingsGet)
       .then((s) => {
         applyAppearance(s?.appearance)
+        appearanceRef.current = (s?.appearance ?? null) as never
         if (!s?.general?.restoreLastPage) return
         // 带了 #hash 说明是深链接（截图/外部调用），优先尊重 hash，不恢复上次页面
         if (window.location.hash.replace(/^#/, '').trim()) return
@@ -276,6 +279,15 @@ export default function App(): React.ReactElement {
   const back = useCallback(() => {
     setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
   }, [])
+
+  useEffect(
+    () =>
+      watchSystemTheme(() => {
+        const a = appearanceRef.current
+        if (a) applyAppearance(a as never)
+      }),
+    []
+  )
 
   const stats = payload?.stats
   const issueCount = stats ? stats.total - stats.withDesc : 0

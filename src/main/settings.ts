@@ -17,7 +17,14 @@ const DEFAULTS: AppSettings = {
     kindleEmail: ''
   },
   convert: { defaultTarget: 'epub', extraArgs: '', concurrency: 2, outputDir: '' },
-  appearance: { theme: 'light', coverRadius: 6, gridDensity: 'comfortable' },
+  appearance: {
+    theme: 'light',
+    accent: 'green',
+    coverRadius: 6,
+    gridMin: 140,
+    cornerStyle: 'squircle',
+    sidebarWidth: 306
+  },
   update: { endpoint: '', autoCheck: true },
   general: { closeToTray: false, restoreLastPage: false },
   metadata: { authorSeparator: ' & ', tagSeparator: ',', embedOnSave: false },

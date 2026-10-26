@@ -19,6 +19,7 @@
   --accent-weak: #e8f8ef;
   --sidebar-bg: #f6f6f6;
   --pill-grey: #ececec;
+  --bar-bg: rgba(255, 255, 255, 0.96);
   --t1: #1a1a1a;
   --t2: #848383;
   --t3: #656565;
@@ -49,7 +50,7 @@ body,
 body {
   font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
   color: var(--t1);
-  background: #fff;
+  background: var(--surface);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -243,7 +244,7 @@ textarea {
   color: #fff;
   font-weight: 500;
   /* Figma：同一颗绿的 24 半径、2 扩散、16% 透明度投影 */
-  box-shadow: 0 0 12px 1px rgba(7, 193, 96, 0.16);
+  box-shadow: var(--accent-shadow, 0 0 12px 1px rgba(7, 193, 96, 0.16));
 }
 
 .nav-item.is-active .nav-badge {
@@ -780,7 +781,7 @@ textarea {
   line-height: 1.5;
   color: #666;
   text-align: center;
-  background: #f2f2f2;
+  background: var(--pill-grey);
 }
 
 .home-covers {
@@ -1058,7 +1059,7 @@ html.density-compact .grid {
   height: 38px;
   padding: 0 18px;
   border-radius: 10px;
-  background: #f2f2f2;
+  background: var(--pill-grey);
   color: var(--t1);
   font-size: 15px;
   display: inline-flex;
@@ -1121,7 +1122,7 @@ html.density-compact .grid {
   height: 30px;
   padding: 0 12px;
   border-radius: 15px;
-  background: #f2f2f2;
+  background: var(--pill-grey);
   font-size: 13px;
   color: var(--t3);
   display: inline-flex;
@@ -1144,7 +1145,7 @@ html.density-compact .grid {
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid var(--hairline);
-  background: #fff;
+  background: var(--surface);
   outline: 0;
   font-size: 14px;
   min-width: 0;
@@ -1177,7 +1178,7 @@ html.density-compact .grid {
   padding: 0 10px;
   border-radius: 8px;
   border: 1px solid var(--hairline);
-  background: #fff;
+  background: var(--surface);
   outline: 0;
   font-size: 14px;
 }
@@ -1296,7 +1297,7 @@ html.density-compact .grid {
   height: var(--bottombar-h);
   flex: none;
   border-top: 1px solid var(--hairline);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--bar-bg);
   backdrop-filter: saturate(1.4) blur(12px);
   display: flex;
   align-items: center;
@@ -1356,7 +1357,7 @@ html.density-compact .grid {
 
 .seg {
   display: inline-flex;
-  background: #f2f2f2;
+  background: var(--pill-grey);
   border-radius: 10px;
   padding: 3px;
   gap: 2px;
@@ -1379,7 +1380,7 @@ html.density-compact .grid {
 }
 
 .seg-item.is-active {
-  background: #fff;
+  background: var(--surface);
   color: var(--t1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
@@ -1537,7 +1538,7 @@ html.density-compact .grid {
   min-width: 216px;
   max-height: 320px;
   overflow-y: auto;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: 10px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
@@ -1849,7 +1850,7 @@ html.density-compact .grid {
   padding: 16px 18px;
   border-radius: 12px;
   border: 1px solid var(--hairline-soft);
-  background: #fff;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1883,7 +1884,7 @@ html.density-compact .grid {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #f2f2f2;
+  background: var(--pill-grey);
   color: var(--t2);
 }
 
@@ -2430,7 +2431,7 @@ html.density-compact .grid {
 .ce-modal {
   width: 760px;
   max-width: calc(100vw - 48px);
-  background: #fff;
+  background: var(--surface);
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
   overflow: hidden;
@@ -2566,7 +2567,7 @@ html.density-compact .grid {
 .dlg {
   width: 420px;
   max-width: calc(100vw - 48px);
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
   padding: 22px 24px 18px;
@@ -2623,7 +2624,7 @@ html.density-compact .grid {
 .crash-card {
   width: 560px;
   max-width: 100%;
-  background: #fff;
+  background: var(--surface);
   border-radius: 16px;
   border: 1px solid var(--hairline);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14);
@@ -2729,7 +2730,7 @@ html.density-compact .grid {
   border: 1px solid var(--hairline-soft);
   border-radius: 10px;
   text-align: left;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.14s ease, background 0.14s ease;
 }
 
@@ -2821,7 +2822,7 @@ html.density-compact .grid {
   border: 1px solid var(--hairline-soft);
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
   text-align: center;
 }
 
@@ -2979,7 +2980,7 @@ html.density-compact .grid {
 }
 
 .ed-file:hover {
-  background: #fff;
+  background: var(--surface);
 }
 
 .ed-file.is-active {
@@ -3029,7 +3030,7 @@ html.density-compact .grid {
   font-size: 13px;
   line-height: 1.7;
   tab-size: 2;
-  background: #fff;
+  background: var(--surface);
   color: #1f2328;
 }
 
@@ -3089,4 +3090,98 @@ html.density-compact .grid {
   to {
     background-position: 0 0;
   }
+}
+
+
+/* ================= 外观：主色板 ================= */
+
+.accent-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.accent-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.accent-dot:hover {
+  transform: scale(1.08);
+}
+
+.accent-dot.is-on {
+  border-color: var(--surface);
+  box-shadow: 0 0 0 2px var(--t1);
+}
+
+/* ================= 深色主题 ================= */
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --t1: #e9e9ec;
+  --t2: #9a9aa1;
+  --t3: #b6b6bd;
+  --surface: #1b1b1f;
+  --surface-2: #232328;
+  --sidebar-bg: #141416;
+  --pill-grey: #2a2a2f;
+  --bar-bg: rgba(20, 20, 22, 0.96);
+  --field: #2c2c32;
+  --hairline: #303036;
+  --hairline-soft: #26262b;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 10px 22px rgba(0, 0, 0, 0.62);
+}
+
+html[data-theme='dark'] body {
+  background: var(--surface);
+}
+
+html[data-theme='dark'] .nav-item:hover:not(.is-active) {
+  background: #26262b;
+}
+
+html[data-theme='dark'] .home-cover,
+html[data-theme='dark'] .hb-card {
+  background: #232328;
+}
+
+html[data-theme='dark'] .home-skeleton {
+  background: linear-gradient(100deg, #232328 30%, #2c2c32 45%, #232328 60%);
+  background-size: 300% 100%;
+}
+
+html[data-theme='dark'] .set-kbd {
+  background: #26262b;
+}
+
+html[data-theme='dark'] .crash {
+  background: #141416;
+}
+
+html[data-theme='dark'] .dlg-mask {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+html[data-theme='dark'] .ed-code {
+  color: #dcdce1;
+}
+
+html[data-theme='dark'] .ed-tree {
+  background: #18181b;
+}
+
+html[data-theme='dark'] .hb-scrim {
+  background: rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme='dark'] .lock-pill,
+html[data-theme='dark'] .warn-box {
+  background: #2e2519;
+  color: #e8c58a;
 }

@@ -1,6 +1,6 @@
 {
   "name": "eebookk",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "private": true,
   "description": "eebookk — 本地书库管理器，基于 calibre",
   "main": "./out/main/index.js",
