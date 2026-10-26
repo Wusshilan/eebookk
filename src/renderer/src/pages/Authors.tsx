@@ -94,35 +94,43 @@ function initialOf(name: string): string {
 const CSS = `
 .tx-au-wrap {
   display: flex;
-  align-items: flex-start;
-  gap: 22px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
 }
 .tx-au-rail {
   position: sticky;
-  top: 6px;
+  top: 0;
+  z-index: 6;
   flex: none;
-  width: 62px;
-  max-height: calc(100vh - 230px);
-  overflow-y: auto;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 5px;
+  flex-direction: row;
+  gap: 5px;
+  padding: 7px 8px;
   border: 1px solid var(--hairline-soft);
   border-radius: 12px;
-  background: var(--surface-2);
+  background: var(--surface);
+  scrollbar-width: none;
+}
+.tx-au-rail::-webkit-scrollbar {
+  display: none;
 }
 .tx-au-rail-item {
-  height: 26px;
+  height: 30px;
   flex: none;
-  padding: 0 7px;
-  border-radius: 7px;
+  padding: 0 11px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  font-size: 12.5px;
+  justify-content: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--t3);
+  white-space: nowrap;
 }
 .tx-au-rail-item:hover {
   background: #efefef;

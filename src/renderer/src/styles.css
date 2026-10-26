@@ -3440,3 +3440,88 @@ html[data-theme='dark'] .warn-box {
   color: var(--accent-press);
   justify-content: flex-start;
 }
+
+/* ---- 设备页 Kindle 插图 ---- */
+
+.ds-kindle-figure {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 6px;
+}
+
+.kf-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.kf-body {
+  width: 64px;
+  height: 90px;
+}
+
+.kf-model {
+  font-size: 11px;
+  color: var(--t2);
+  max-width: 90px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-kindle-say {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+
+.ds-kindle-say b {
+  font-size: 14px;
+  color: var(--t1);
+}
+
+/* ---- 整理台：网络自动补全 ---- */
+
+.wb-auto {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+}
+
+.wb-auto-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wb-auto-sub {
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.wb-auto-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--pill-grey);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.wb-auto-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.wb-auto-msg {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--t2);
+}

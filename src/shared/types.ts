@@ -146,6 +146,15 @@ export interface ConvertJob {
 
 /* ---------------- 设备 ---------------- */
 
+export interface KindleProbe {
+  /** 系统里是否能看到 Kindle 设备（MTP / USB 都算） */
+  present: boolean
+  /** 设备型号，拿不到就是空串 */
+  model: string
+  /** 有盘符说明是 U 盘模式；没有但 present=true 就是 MTP 模式 */
+  massStorage: boolean
+}
+
 export interface KindleDevice {
   mountPath: string
   label: string

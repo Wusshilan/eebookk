@@ -28,6 +28,7 @@ export const CH = {
   convertList: 'convert:list',
   // 设备 / 推送
   deviceDetect: 'device:detect',
+  deviceProbe: 'device:probe',
   deviceSend: 'device:send',
   smtpTest: 'smtp:test',
   // 设置

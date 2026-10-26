@@ -242,6 +242,8 @@ export default function App(): React.ReactElement {
         setShortcuts(s?.shortcuts ?? null)
         setAccent(s?.appearance?.accent ?? 'green')
         if (!s?.general?.restoreLastPage) return
+        // 首帧就是 hash 指定的页面时，不要再用「上次页面」把它盖掉（深链接/截图都靠这个）
+        if (initialRoute().name !== 'home') return
         // 带了 #hash 说明是深链接（截图/外部调用），优先尊重 hash，不恢复上次页面
         if (window.location.hash.replace(/^#/, '').trim()) return
         const last = localStorage.getItem('eebookk.lastRoute')

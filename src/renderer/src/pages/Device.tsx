@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import type { AppSettings, KindleDevice, SendResult } from '../../../shared/types'
+import type { AppSettings, KindleDevice, KindleProbe, SendResult } from '../../../shared/types'
 import { CH } from '../../../shared/ipc'
 import { useApp } from '../app/context'
 import { coverUrl, formatBytes } from '../lib/cover'
@@ -185,6 +185,21 @@ function formatTime(at: number): string {
   return `${d.getMonth() + 1}-${String(d.getDate()).padStart(2, '0')} ${hh}:${mm}`
 }
 
+function KindleFigure({ model }: { model: string }): React.ReactElement {
+  return (
+    <div className="kf-wrap">
+      <svg className="kf-body" viewBox="0 0 120 170" aria-label={model || 'Kindle'}>
+        <rect x="6" y="4" width="108" height="162" rx="10" fill="var(--t1)" opacity="0.09" />
+        <rect x="8" y="6" width="104" height="158" rx="9" fill="var(--surface)" stroke="var(--hairline)" />
+        <rect x="16" y="14" width="88" height="126" rx="3" fill="var(--surface-2)" stroke="var(--hairline-soft)" />
+        <circle cx="60" cy="154" r="6" fill="none" stroke="var(--hairline)" />
+        <path d="M40 60h40M40 74h40M40 88h26" stroke="var(--hairline)" strokeWidth="2.4" strokeLinecap="round" />
+      </svg>
+      <span className="kf-model">{model || 'Kindle'}</span>
+    </div>
+  )
+}
+
 export default function Device(): React.ReactElement {
   const { books, selected, setSelected, toggleSelected, clearSelection, toast, invoke, navigate } = useApp()
   const [devices, setDevices] = useState<KindleDevice[]>([])
@@ -195,6 +210,7 @@ export default function Device(): React.ReactElement {
   const [onlyEpub, setOnlyEpub] = useState(false)
   const [recent, setRecent] = useState<RecentSend[]>(loadRecent)
   const [lastItems, setLastItems] = useState<SendItem[]>([])
+  const [probe, setProbe] = useState<KindleProbe | null>(null)
 
   // 挂载时检测设备 + 读设置；这里直接用 window.api，避免 useApp().invoke 的引用变化把 effect 反复触发
   useEffect(() => {
@@ -210,6 +226,12 @@ export default function Device(): React.ReactElement {
       .finally(() => {
         if (alive) setDetecting(false)
       })
+    window.api
+      .invoke<KindleProbe>(CH.deviceProbe)
+      .then((p) => {
+        if (alive) setProbe(p)
+      })
+      .catch(() => undefined)
     window.api
       .invoke<AppSettings | undefined>(CH.settingsGet)
       .then((next) => {
@@ -229,6 +251,8 @@ export default function Device(): React.ReactElement {
       // 传 true 跳过主进程 8 秒缓存，用户点「重新检测」时必须是真扫
       const list = await window.api.invoke<KindleDevice[]>(CH.deviceDetect, true)
       setDevices(Array.isArray(list) ? list : [])
+      const p = await window.api.invoke<KindleProbe>(CH.deviceProbe)
+      setProbe(p)
     } catch (e) {
       toast(`检测设备失败：${String(e)}`, 'error')
     } finally {
@@ -386,14 +410,24 @@ export default function Device(): React.ReactElement {
                         ? `推送到 Kindle（${selected.length} 本）`
                         : '先选书'}
                   </button>
-                  <span className="ds-note">
-                    复制不影响书库；安全弹出后在设备上刷新书库即可看到。
-                  </span>
                 </div>
               </>
             ) : (
               <>
-
+                <div className="ds-kindle-figure">
+                  <KindleFigure model={probe?.model || (probe?.present ? 'Kindle' : '')} />
+                  {probe?.present ? (
+                    <div className="ds-kindle-say">
+                      <b>{probe.model || 'Kindle'}</b>
+                      <span>系统认到设备，但没有盘符 —— 在设备上「设置 → 设备选项 → 电脑连接 → 传输文件」</span>
+                    </div>
+                  ) : (
+                    <div className="ds-kindle-say">
+                      <b>未连接</b>
+                      <span>插上数据线后选「连接」；只充电不会出现</span>
+                    </div>
+                  )}
+                </div>
                 <div className="ds-actions">
                   <button className="btn" disabled={detecting} onClick={() => void refresh()}>
                     <IconRefresh width={16} height={16} />

@@ -825,10 +825,7 @@ export default function Collections({
       )}
 
       <div style={{ height: 12 }} />
-      <span className="cl-foot">
-        Ctrl / ⌘ 点击多选，右键也能选中。收藏和书单只保存在 eebookk 本地
-        （userData/collections.json），不会写入 calibre，也不会动你的标签。
-      </span>
+      <span className="cl-foot">Ctrl / ⌘ 点击多选，右键也能选中。</span>
     </div>
   )
 }

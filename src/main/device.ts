@@ -10,6 +10,7 @@
  *
  * 凭据统一放在 ctx.settings 里（SettingsStore 内部用 safeStorage 加密落盘），这里只读不写。
  */
+import { execFile } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statfsSync, statSync } from 'node:fs'
 import { readdir, stat, statfs } from 'node:fs/promises'
 import { connect as netConnect, isIP, type Socket } from 'node:net'
@@ -17,6 +18,7 @@ import { connect as tlsConnect, type TLSSocket } from 'node:tls'
 import { hostname } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
+import type { KindleProbe } from '../shared/types'
 import { CH } from '../shared/ipc'
 import type { KindleDevice, SendResult, SmtpSettings } from '../shared/types'
 import { ctx } from './ctx'
@@ -182,11 +184,13 @@ async function countBookFiles(dir: string, depth = 0): Promise<number> {
 
 async function probeDrive(drive: string): Promise<KindleDevice | null> {
   const documents = join(drive, 'documents')
-  const [hasDocs, hasSystem] = await Promise.all([
+  // 老 Kindle 有 system/，新固件有的不暴露它；只要有 documents/ 就当 Kindle
+  const [hasDocs, hasSystem, hasSandbox] = await Promise.all([
     isDirAsync(documents),
-    isDirAsync(join(drive, 'system'))
+    isDirAsync(join(drive, 'system')),
+    isDirAsync(join(drive, '.active_content_sandbox'))
   ])
-  if (!hasDocs || !hasSystem) return null
+  if (!hasDocs && !hasSystem && !hasSandbox) return null
   let freeBytes = 0
   let totalBytes = 0
   try {
@@ -845,11 +849,41 @@ export async function testSmtp(): Promise<SendResult> {
   }
 }
 
+/* ---------------- 系统级探测（MTP 模式看不到盘符） ---------------- */
+
+const PNP_PS =
+  "Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | " +
+  "Where-Object { $_.FriendlyName -match 'Kindle|Amazon' } | " +
+  "Select-Object -First 1 -ExpandProperty FriendlyName"
+
+/** 用 PnP 看系统里有没有 Kindle：MTP 模式下没有盘符，但设备是存在的 */
+export async function probePnp(massStorage: boolean): Promise<KindleProbe> {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', PNP_PS],
+      { windowsHide: true, timeout: 6000 },
+      (err, stdout) => {
+        const model = (stdout ?? '').trim().split(/\r?\n/)[0] ?? ''
+        if (err || !model) {
+          resolve({ present: massStorage, model: '', massStorage })
+          return
+        }
+        resolve({ present: true, model, massStorage })
+      }
+    )
+  })
+}
+
 /* ---------------- 注册 ---------------- */
 
 export function registerDevice(): void {
   // settings:get / settings:set 已在 index.ts 注册，这里只加设备与推送这三个频道，避免重复注册
   ipcMain.handle(CH.deviceDetect, (_e, force?: boolean) => detectKindle(Boolean(force)))
+  ipcMain.handle(CH.deviceProbe, async () => {
+    const drives = await detectKindle(true)
+    return { ...(await probePnp(drives.length > 0)), }
+  })
 
   ipcMain.handle(CH.deviceSend, async (_e, raw: unknown) => {
     const payload = normalizePayload(raw)

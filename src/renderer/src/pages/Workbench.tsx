@@ -2,6 +2,8 @@
 import { CH } from '../../../shared/ipc'
 import type { QualityIssue, QualityReport, TagStat } from '../../../shared/types'
 import { useApp } from '../app/context'
+import { textToHtml } from '../lib/cover'
+import type { MetadataPatch, WebMetaHit } from '../../../shared/types'
 import { coverUrl } from '../lib/cover'
 import { IconCheck, IconRefresh, IconSliders, IconTrash } from '../icons'
 import MetadataBatchEdit from '../components/MetadataBatchEdit'
@@ -20,6 +22,62 @@ export default function Workbench(): React.ReactElement {
   const [pickedTags, setPickedTags] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [pickedBooks, setPickedBooks] = useState<number[]>([])
+
+  /* ---------------- 网络自动补全 ---------------- */
+
+  const [autoBusy, setAutoBusy] = useState(false)
+  const [autoProg, setAutoProg] = useState({ done: 0, total: 0, updated: 0, skipped: 0, failed: 0 })
+  const [autoMsg, setAutoMsg] = useState('')
+
+  const norm = (s: string): string => s.replace(/[\s:：,，.。·\-—()（）\[\]【】]/g, '').toLowerCase()
+
+  const autoFill = async (): Promise<void> => {
+    const ids = pickedBooks.length ? pickedBooks : issueBooks.map((b) => b.id)
+    if (!ids.length || autoBusy) return
+    setAutoBusy(true)
+    setAutoMsg('')
+    setAutoProg({ done: 0, total: ids.length, updated: 0, skipped: 0, failed: 0 })
+    let updated = 0
+    let skipped = 0
+    let failed = 0
+    for (let i = 0; i < ids.length; i += 1) {
+      const book = books.find((b) => b.id === ids[i])
+      if (!book) {
+        skipped += 1
+      } else {
+        try {
+          const hits = await window.api.invoke<WebMetaHit[]>(CH.metaSearch, book.title)
+          const key = norm(book.title)
+          const hit =
+            (hits ?? []).find((h) => norm(h.title).includes(key) || key.includes(norm(h.title))) ?? null
+          if (!hit) {
+            skipped += 1
+          } else {
+            const patch: MetadataPatch = {}
+            if (hit.publisher) patch.publisher = hit.publisher
+            if (hit.pubdate) patch.pubdate = hit.pubdate
+            if (hit.summary) patch.comments = textToHtml(hit.summary)
+            if (hit.language) patch.languages = [hit.language]
+            if (hit.isbn) patch.identifiers = { isbn: hit.isbn }
+            if (Object.keys(patch).length === 0) {
+              skipped += 1
+            } else {
+              const res = await window.api.invoke<{ ok: boolean }>(CH.metadataApply, [book.id], patch)
+              if (res?.ok) updated += 1
+              else failed += 1
+            }
+          }
+        } catch {
+          failed += 1
+        }
+      }
+      setAutoProg({ done: i + 1, total: ids.length, updated, skipped, failed })
+    }
+    setAutoBusy(false)
+    setAutoMsg(`补全 ${updated} 本，跳过 ${skipped} 本，失败 ${failed} 本`)
+    if (updated > 0) await load()
+  }
+
   const [focusBatch, setFocusBatch] = useState(false)
 
   // 从问题清单点「批量编辑」后滚到下面的面板，免得用户找
@@ -227,6 +285,25 @@ export default function Workbench(): React.ReactElement {
               </div>
             </div>
           ) : null}
+
+          <div className="wb-auto panel">
+            <div className="wb-auto-head">
+              <span className="panel-title">网络自动补全</span>
+              <span className="spacer" />
+              <span className="wb-auto-sub">
+                已选 {pickedBooks.length || issueBooks.length} 本
+              </span>
+              <button className="btn btn-sm btn-primary" disabled={autoBusy} onClick={() => void autoFill()}>
+                {autoBusy ? `处理中 ${autoProg.done}/${autoProg.total}` : '开始补全'}
+              </button>
+            </div>
+            {autoBusy || autoMsg ? (
+              <div className="wb-auto-bar">
+                <i style={{ width: `${autoProg.total ? (autoProg.done / autoProg.total) * 100 : 0}%` }} />
+              </div>
+            ) : null}
+            {autoMsg ? <div className="wb-auto-msg">{autoMsg}</div> : null}
+          </div>
 
           <div id="wb-batch" style={{ scrollMarginTop: 16 }}>
             <MetadataBatchEdit issues={report.issues} onApplied={() => void load()} />
