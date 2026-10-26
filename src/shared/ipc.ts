@@ -9,6 +9,7 @@ export const CH = {
   libraryRemove: 'library:remove',
   libraryAdd: 'library:add',
   libraryBackup: 'library:backup',
+  libraryColumns: 'library:columns',
   openCalibre: 'app:openCalibre',
   pickDirectory: 'app:pickDirectory',
   /** 在文件管理器里定位任意路径（转换产物等） */

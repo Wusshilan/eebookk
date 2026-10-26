@@ -250,3 +250,14 @@ MIT。calibre 是 GPLv3 的独立程序，不随本应用分发。
 **网络**：三个源都要能访问外网。Google Books、Open Library、Goodreads、Amazon 在这台机器上不通，所以没接。
 NeoDB 偶尔很慢（单次 15s 超时），失败时那一源就不返回结果，不影响另外两个。
 微信读书的封面接口默认给 70×101 缩略图，代码会自动换成 `t9_` 大图（428×616），拿不到才退回原图。
+
+---
+
+## 元数据编辑器字段说明
+
+详情页「编辑元数据」可改：书名、作者、作者排序、系列、系列序号、出版社、出版日期、语言、评分、标签、标识符、自定义列、简介。
+
+- **标识符是整组替换**。calibredb 的 `--field identifiers:` 一次覆盖全部键，只传部分键会删掉其它键。所以这里做整组编辑：表单把当前所有键都列出来，保存时提交完整一组；传空表示全清。
+- **作者排序**留空时 calibre 按作者自动重算，不会变成空。
+- **自定义列**（库里建了才会出现）支持 text / enumeration / series / bool / rating / datetime / int / 多值 text。bool 必须发 true/false（发 1/0 会报错）；rating 发 0–5 星，calibre 自己 ×2；datetime 要补 `T00:00:00Z`。
+- **副标题在这个 calibre 版本不存在**：`--field subtitle:` 报「未知字段」，`books` 表也没有 subtitle 列，所以表单里没有这一项。

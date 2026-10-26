@@ -22,11 +22,27 @@ export interface Book {
   /** 主格式文件字节数 */
   sizeBytes: number
   publisher: string | null
+  subtitle?: string
+  authorSort?: string
   languages: string | null
   /** ISBN / ASIN 等标识符，形如 { isbn: '978...' } */
   identifiers: Record<string, string>
   /** 备注（calibre 的 comments），纯文本，可能为空 */
   comments: string
+  /** 自定义列值，key 是列标签（如 '#genre'） */
+  custom?: Record<string, string>
+}
+
+/** calibre 的自定义列定义 */
+export interface CustomColumn {
+  id: number
+  /** '#genre' 这种，写库时用它 */
+  label: string
+  name: string
+  datatype: string
+  isMultiple: boolean
+  /** 枚举列的取值 */
+  options: string[]
 }
 
 export interface LibraryStats {
@@ -93,6 +109,12 @@ export interface MetadataPatch {
   languages?: string[]
   /** 出版日期，只传 YYYY-MM-DD；null 表示清空 */
   pubdate?: string | null
+  subtitle?: string | null
+  authorSort?: string | null
+  /** 标识符，形如 { isbn: '978...', 'mobi-asin': 'B0...' }；传 {} 表示全清 */
+  identifiers?: Record<string, string>
+  /** 自定义列，key 用 '#label'；null 表示清空该列 */
+  custom?: Record<string, string | null>
 }
 
 export interface EditResult {

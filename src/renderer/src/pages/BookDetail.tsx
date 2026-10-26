@@ -140,9 +140,7 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
   const createAndAdd = async (): Promise<void> => {
     const name = await ask({
       title: '新建书单',
-      message: '书单只存在 eebookk 本地，不会写入 calibre。',
       label: '书单名称',
-      placeholder: '例如：待读清单',
       okText: '新建'
     })
     if (!name?.trim()) return
@@ -339,7 +337,7 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
               <MetadataEditor key={book.id} book={book} onCancel={() => setEditing(false)} />
             ) : (
               <div className="detail-comments">
-                {htmlToText(book.comments) || <span className="cell-muted">没有简介。可以点右上角「编辑元数据」补上。</span>}
+                {htmlToText(book.comments)}
               </div>
             )}
           </div>

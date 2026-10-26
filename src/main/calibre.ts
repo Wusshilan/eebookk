@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { Book, LibraryStats, LibraryPayload } from '../shared/types'
+import { readColumnDefs, readCustomValues } from './columns'
 
 export type { Book, LibraryStats, LibraryPayload }
 
@@ -52,7 +53,7 @@ export function detectCalibreVersion(): string | null {
 
 const BOOK_SQL = `
 select
-  b.id, b.title, b.path, b.has_cover, b.timestamp, b.pubdate, b.series_index,
+  b.id, b.title, b.path, b.has_cover, b.timestamp, b.pubdate, b.series_index, b.author_sort,
   (select group_concat(a.name, ' & ') from authors a
      join books_authors_link l on l.author = a.id where l.book = b.id) as authors,
   (select group_concat(t.name, char(31)) from tags t
@@ -82,6 +83,7 @@ interface RawBook {
   timestamp: string
   pubdate: string
   series_index: number | null
+  author_sort: string | null
   authors: string | null
   tags: string | null
   tags_alt?: string | null
@@ -123,6 +125,8 @@ export class Library {
         cur[r.type] = r.val
         idents.set(r.book, cur)
       }
+      // 库里 0 个自定义列时这里直接返回空 Map，不会多查任何表
+      const custom = readCustomValues(db, readColumnDefs(db))
 
       this.books = rows.map((r) => ({
         id: r.id,
@@ -142,9 +146,14 @@ export class Library {
         relPath: r.path,
         sizeBytes: Number(r.size_bytes ?? 0),
         publisher: r.publisher,
+        // calibre 9.15 的 books 表没有 subtitle 列，calibredb 也不认这个字段
+        subtitle: '',
+        // books.sort 是书名排序，作者排序在 books.author_sort
+        authorSort: r.author_sort ?? '',
         languages: r.languages,
         identifiers: idents.get(r.id) ?? {},
-        comments: r.comments ?? ''
+        comments: r.comments ?? '',
+        custom: custom.get(r.id) ?? {}
       }))
       this.byId = new Map(this.books.map((b) => [b.id, b]))
       return this.books

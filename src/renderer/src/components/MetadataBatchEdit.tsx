@@ -242,7 +242,7 @@ export default function MetadataBatchEdit({
         }
 
         if (groups.size === 0) {
-          setResult({ updated: 0, failed: [], message: '这些书的标签本来就是这样，没有要改的。' })
+          setResult({ updated: 0, failed: [], message: '没有需要改的' })
         } else {
           for (const group of groups.values()) {
             const res = await window.api.invoke<ApplyResult>(
@@ -301,7 +301,6 @@ export default function MetadataBatchEdit({
         <input
           className="input"
           value={search}
-          placeholder="搜书名、作者、标签，点书就加进选择"
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="me-picker-actions">
@@ -317,7 +316,7 @@ export default function MetadataBatchEdit({
           </button>
           <span className="me-note">
             匹配 {filtered.length} 本
-            {filtered.length > shown.length ? `，只列前 ${shown.length} 本` : ''}
+            
           </span>
         </div>
         <div className="me-picker-list">
@@ -366,7 +365,6 @@ export default function MetadataBatchEdit({
               className="input"
               disabled={seriesMode !== 'set'}
               value={seriesValue}
-              placeholder={seriesMode === 'clear' ? '会清空' : '系列名'}
               onChange={(e) => setSeriesValue(e.target.value)}
             />
           </div>
@@ -381,7 +379,6 @@ export default function MetadataBatchEdit({
               disabled={seriesIndexMode !== 'set'}
               value={seriesIndexValue}
               inputMode="decimal"
-              placeholder={seriesIndexMode === 'clear' ? '会清空' : '数字'}
               onChange={(e) => setSeriesIndexValue(e.target.value)}
             />
           </div>
@@ -395,7 +392,6 @@ export default function MetadataBatchEdit({
               className="input"
               disabled={publisherMode !== 'set'}
               value={publisherValue}
-              placeholder={publisherMode === 'clear' ? '会清空' : '出版社'}
               onChange={(e) => setPublisherValue(e.target.value)}
             />
           </div>
@@ -409,7 +405,6 @@ export default function MetadataBatchEdit({
               className="input"
               disabled={pubdateMode !== 'set'}
               value={pubdateValue}
-              placeholder={pubdateMode === 'clear' ? '会清空' : '2008-05-01'}
               onChange={(e) => setPubdateValue(e.target.value)}
             />
           </div>
@@ -423,7 +418,6 @@ export default function MetadataBatchEdit({
               className="input"
               disabled={languagesMode !== 'set'}
               value={languagesValue}
-              placeholder={languagesMode === 'clear' ? '会清空' : 'chi, eng'}
               onChange={(e) => setLanguagesValue(e.target.value)}
             />
           </div>
@@ -458,7 +452,6 @@ export default function MetadataBatchEdit({
               className="input"
               disabled={tagMode === 'keep'}
               value={tagValue}
-              placeholder="古典文学, 长篇小说"
               onChange={(e) => setTagValue(e.target.value)}
             />
           </div>

@@ -3,9 +3,10 @@ import { ipcMain } from 'electron'
 import { promisify } from 'node:util'
 import { CH } from '../shared/ipc'
 import type {
-  EditResult, MetadataPatch, QualityIssue, QualityReport, TagStat
+  CustomColumn, EditResult, MetadataPatch, QualityIssue, QualityReport, TagStat
 } from '../shared/types'
 import { ctx } from './ctx'
+import { publicColumns, readColumns, toFieldValue } from './columns'
 import { calibreExe, isCalibreRunning } from './env'
 
 const run = promisify(execFile)
@@ -176,7 +177,26 @@ async function guardWritable(): Promise<string | null> {
   return null
 }
 
-function patchToArgs(patch: MetadataPatch): string[] {
+/** calibredb 的 identifiers 是整组替换：只传部分键会删掉其他键，传空串会全清 */
+function identifiersField(map: Record<string, string>): { value: string; error?: string } {
+  const pairs: string[] = []
+  for (const [rawKey, rawVal] of Object.entries(map)) {
+    const key = rawKey.trim()
+    const value = (rawVal ?? '').trim()
+    if (!key) {
+      if (value) return { value: '', error: '标识符的名字不能为空' }
+      continue
+    }
+    // 整组语义下，空值就是不提交这个键，等于把它删掉
+    if (!value) continue
+    if (/[,:]/.test(key)) return { value: '', error: `标识符「${key}」的名字里不能有逗号或冒号` }
+    if (value.includes(',')) return { value: '', error: `标识符「${key}」的值里不能有逗号` }
+    pairs.push(`${key}:${value}`)
+  }
+  return { value: pairs.join(',') }
+}
+
+function patchToArgs(patch: MetadataPatch, dbFile: string): { args: string[]; error?: string } {
   const args: string[] = []
   const meta = ctx.settings?.get().metadata
   const authorSep = meta?.authorSeparator?.trim() || ' & '
@@ -206,14 +226,51 @@ function patchToArgs(patch: MetadataPatch): string[] {
     const d = patch.pubdate?.trim()
     push('pubdate', d ? `${d}T00:00:00Z` : '')
   }
-  return args
+  if (patch.subtitle !== undefined && patch.subtitle != null && patch.subtitle.trim()) {
+    // calibre 9.15 的 books 表没有 subtitle 列，calibredb set_metadata 也报「未知字段」。
+    // 空值当作「没有可清的东西」直接跳过，别的字段照写。
+    return {
+      args,
+      error: '这个 calibre 版本没有副标题字段（books 表里没有 subtitle 列），写不进去。'
+    }
+  }
+  if (patch.authorSort !== undefined) {
+    // 空值会让 calibre 按 authors 重新算一遍默认排序
+    push('author_sort', patch.authorSort ?? '')
+  }
+  if (patch.identifiers !== undefined) {
+    const ident = identifiersField(patch.identifiers)
+    if (ident.error) return { args, error: ident.error }
+    push('identifiers', ident.value)
+  }
+  if (patch.custom !== undefined) {
+    const cols = readColumns(dbFile)
+    const byLabel = new Map(cols.map((c) => [c.label, c]))
+    for (const [rawLabel, rawValue] of Object.entries(patch.custom)) {
+      const label = rawLabel.startsWith('#') ? rawLabel : `#${rawLabel}`
+      const col = byLabel.get(label)
+      if (!col) return { args, error: `自定义列 ${label} 不存在` }
+      if (col.datatype === 'composite') return { args, error: `${label} 是复合列，不能直接写` }
+      const conv = toFieldValue(col, rawValue)
+      if (conv.error) return { args, error: `${label}：${conv.error}` }
+      push(label, conv.value)
+    }
+  }
+  return { args }
 }
 
 async function setMetadata(ids: number[], patch: MetadataPatch): Promise<EditResult> {
   const lib = ctx.ensureLibrary()
   const failed: EditResult['failed'] = []
   if (!lib) return { ok: false, updated: 0, failed }
-  const fields = patchToArgs(patch)
+  const built = patchToArgs(patch, lib.dbFile)
+  if (built.error) {
+    for (const id of ids) {
+      failed.push({ id, title: lib.book(id)?.title ?? String(id), error: built.error })
+    }
+    return { ok: false, updated: 0, failed }
+  }
+  const fields = built.args
   if (!fields.length) return { ok: true, updated: 0, failed }
 
   let updated = 0
@@ -261,6 +318,13 @@ async function setMetadata(ids: number[], patch: MetadataPatch): Promise<EditRes
 
 export function registerWorkbench(): void {
   ipcMain.handle(CH.qualityReport, () => buildReport())
+
+  /** 自定义列定义：UI 拿它决定渲染什么控件；读失败就返回空列表 */
+  ipcMain.handle(CH.libraryColumns, (): CustomColumn[] => {
+    const lib = ctx.ensureLibrary()
+    if (!lib) return []
+    return publicColumns(readColumns(lib.dbFile))
+  })
 
   ipcMain.handle(CH.metadataApply, async (_e, ids: number[], patch: MetadataPatch) => {
     const blocked = await guardWritable()

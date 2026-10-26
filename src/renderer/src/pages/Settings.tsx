@@ -123,7 +123,6 @@ export default function Settings(): React.ReactElement {
       title: '添加书目源',
       message: '目前只认 OPDS（Atom 目录）。calibre 用的也是这套，多数公共图书馆都提供。',
       label: '名称',
-      placeholder: '例如：古登堡',
       okText: '下一步'
     })
     if (!name?.trim()) return
@@ -131,7 +130,6 @@ export default function Settings(): React.ReactElement {
       title: '书目源地址',
       message: '填目录根地址，形如 https://example.org/opds',
       label: 'OPDS 地址',
-      placeholder: 'https://example.org/opds',
       okText: '添加'
     })
     if (!url?.trim()) return
@@ -418,7 +416,6 @@ export default function Settings(): React.ReactElement {
                   <input
                     className="input"
                     value={draft.convert.outputDir}
-                    placeholder="默认位置"
                     onChange={(e) => patch('convert', { outputDir: e.target.value })}
                   />
                   <button className="btn btn-sm" onClick={() => void pickDir()}>选择</button>
@@ -435,7 +432,6 @@ export default function Settings(): React.ReactElement {
                 <input
                   className="input"
                   value={draft.convert.extraArgs}
-                  placeholder="例如 --base-font-size 18"
                   onChange={(e) => patch('convert', { extraArgs: e.target.value })}
                 />
               </Row>
@@ -517,7 +513,6 @@ export default function Settings(): React.ReactElement {
                 <input
                   className="input"
                   value={draft.smtp.user}
-                  placeholder="you@qq.com"
                   onChange={(e) => patch('smtp', { user: e.target.value })}
                 />
               </Row>
@@ -527,7 +522,6 @@ export default function Settings(): React.ReactElement {
                     className="input"
                     type="password"
                     value={password}
-                    placeholder={draft.smtp.hasPassword ? '已保存，留空就不改' : '授权码'}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   {draft.smtp.hasPassword ? (
@@ -542,7 +536,6 @@ export default function Settings(): React.ReactElement {
                 <input
                   className="input"
                   value={draft.smtp.from}
-                  placeholder="you@qq.com"
                   onChange={(e) => patch('smtp', { from: e.target.value })}
                 />
               </Row>
@@ -550,7 +543,6 @@ export default function Settings(): React.ReactElement {
                 <input
                   className="input"
                   value={draft.smtp.kindleEmail}
-                  placeholder="xxx@kindle.com"
                   onChange={(e) => patch('smtp', { kindleEmail: e.target.value })}
                 />
               </Row>
@@ -591,7 +583,6 @@ export default function Settings(): React.ReactElement {
               <input
                 className="input"
                 value={draft.update.endpoint}
-                placeholder="https://example.com/eebookk/latest.json"
                 onChange={(e) => patch('update', { endpoint: e.target.value })}
               />
             </Row>
@@ -633,7 +624,6 @@ export default function Settings(): React.ReactElement {
                   <input
                     className="input"
                     value={s.url}
-                    placeholder="https://example.org/opds"
                     onChange={(e) => updateSource(s.id, { url: e.target.value })}
                   />
                   {s.builtin ? null : (

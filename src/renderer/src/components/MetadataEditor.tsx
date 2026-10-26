@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CH } from '../../../shared/ipc'
-import type { Book, EditResult, MetadataPatch, WebMetaHit } from '../../../shared/types'
+import type { Book, CustomColumn, EditResult, MetadataPatch, WebMetaHit } from '../../../shared/types'
 import { useApp } from '../app/context'
 import { htmlToText, textToHtml } from '../lib/cover'
 import {
-  CopyText, METADATA_CSS, StarRating, badLanguage, cleanError, isValidDateInput,
-  pubdateInput, splitLanguages, splitTags
+  METADATA_CSS, StarRating, cleanError, isValidDateInput, pubdateInput, splitLanguages, splitTags
 } from './MetadataFields'
 
 type ApplyResult = EditResult & { message?: string }
@@ -13,6 +12,7 @@ type ApplyResult = EditResult & { message?: string }
 interface Draft {
   title: string
   authors: string
+  authorSort: string
   series: string
   seriesIndex: string
   rating: number | null
@@ -27,8 +27,8 @@ function draftFrom(book: Book): Draft {
   return {
     title: book.title,
     authors: book.authors,
+    authorSort: book.authorSort ?? '',
     series: book.series ?? '',
-    // calibre 给没有系列的书也留了个 series_index=1，别把它带进表单
     seriesIndex: book.series && book.seriesIndex != null ? String(book.seriesIndex) : '',
     rating: book.rating ? Math.max(1, Math.round(book.rating / 2)) : null,
     publisher: book.publisher ?? '',
@@ -37,6 +37,24 @@ function draftFrom(book: Book): Draft {
     tags: book.tags.join(', '),
     comments: htmlToText(book.comments)
   }
+}
+
+function Field({
+  label,
+  error,
+  children
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}): React.ReactElement {
+  return (
+    <label className="form-row">
+      <span>{label}</span>
+      {children}
+      {error ? <em className="me-err">{error}</em> : null}
+    </label>
+  )
 }
 
 export default function MetadataEditor({
@@ -51,25 +69,32 @@ export default function MetadataEditor({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const [ids, setIds] = useState<{ k: string; v: string }[]>(() =>
+    Object.entries(book.identifiers).map(([k, v]) => ({ k, v }))
+  )
+  const [columns, setColumns] = useState<CustomColumn[]>([])
+  const [custom, setCustom] = useState<Record<string, string>>(() => ({ ...(book.custom ?? {}) }))
+
   const [webQuery, setWebQuery] = useState(book.title)
   const [hits, setHits] = useState<WebMetaHit[]>([])
   const [looking, setLooking] = useState(false)
   const [lookError, setLookError] = useState('')
 
-  // 详情页用 key={book.id} 挂载，换书时自然重置草稿
-  const ids = useMemo(() => Object.entries(book.identifiers), [book.identifiers])
+  useEffect(() => {
+    window.api
+      .invoke<CustomColumn[]>(CH.libraryColumns)
+      .then((list) => setColumns(Array.isArray(list) ? list : []))
+      .catch(() => setColumns([]))
+  }, [])
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]): void => {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
-  /** 全网查找：书名或 ISBN，豆瓣 + NeoDB 一起搜 */
   const webLookup = async (): Promise<void> => {
     const q = webQuery.trim()
-    if (!q) {
-      setLookError('先填书名或 ISBN')
-      return
-    }
+    if (!q) return
     setLooking(true)
     setLookError('')
     try {
@@ -84,7 +109,6 @@ export default function MetadataEditor({
     }
   }
 
-  /** 把一条结果填进表单，不立刻写库 */
   const fillFrom = (h: WebMetaHit): void => {
     setDraft((d) => ({
       ...d,
@@ -95,89 +119,93 @@ export default function MetadataEditor({
       languages: h.language || d.languages,
       comments: h.summary || d.comments
     }))
+    if (h.isbn) {
+      setIds((prev) =>
+        prev.some((x) => x.k === 'isbn')
+          ? prev.map((x) => (x.k === 'isbn' ? { ...x, v: h.isbn } : x))
+          : [...prev, { k: 'isbn', v: h.isbn }]
+      )
+    }
     setHits([])
   }
 
   const save = async (): Promise<void> => {
     if (calibreRunning) {
-      setSaveError('calibre 正在运行，写不进去。关掉 calibre 再保存。')
+      setSaveError('calibre 正在运行，写不进去')
       return
     }
-    const nextErrors: Record<string, string> = {}
-    const title = draft.title.trim()
-    if (!title) nextErrors.title = '书名不能为空'
-
-    const series = draft.series.trim()
-    let seriesIndex: number | null = null
-    const seriesIndexRaw = draft.seriesIndex.trim()
-    if (seriesIndexRaw) {
-      if (!/^\d+(\.\d+)?$/.test(seriesIndexRaw)) nextErrors.seriesIndex = '序号填数字，可以带小数'
-      else if (!series) nextErrors.seriesIndex = '先填系列名，再填序号'
-      else seriesIndex = Number(seriesIndexRaw)
+    const next: Record<string, string> = {}
+    if (!draft.title.trim()) next.title = '书名不能为空'
+    if (draft.pubdate.trim() && !isValidDateInput(draft.pubdate.trim())) next.pubdate = '日期格式应为 YYYY-MM-DD'
+    if (draft.seriesIndex.trim() && !draft.series.trim()) next.seriesIndex = '先填系列'
+    if (draft.seriesIndex.trim() && !/^\d+(\.\d+)?$/.test(draft.seriesIndex.trim())) {
+      next.seriesIndex = '序号填数字'
     }
-
-    const pubdate = draft.pubdate.trim()
-    if (pubdate && !isValidDateInput(pubdate)) {
-      nextErrors.pubdate = '按 yyyy-mm-dd 填，比如 2008-05-01'
-    }
-    const badLang = badLanguage(draft.languages)
-    if (badLang) nextErrors.languages = `「${badLang}」不像语言码，用 chi、zh、eng 这种`
-
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors)
-      setSaveError('')
-      return
-    }
-    setErrors({})
-    setSaveError('')
+    setErrors(next)
+    if (Object.keys(next).length > 0) return
 
     const patch: MetadataPatch = {
-      title,
+      title: draft.title.trim(),
       authors: draft.authors.split('&').map((s) => s.trim()).filter(Boolean),
-      series: series || null,
-      seriesIndex,
-      rating: draft.rating == null ? null : draft.rating * 2,
+      authorSort: draft.authorSort.trim() || null,
+      series: draft.series.trim() || null,
+      seriesIndex: draft.series.trim() && draft.seriesIndex.trim() ? Number(draft.seriesIndex) : null,
       publisher: draft.publisher.trim() || null,
-      pubdate: pubdate || null,
+      pubdate: draft.pubdate.trim() || null,
       languages: splitLanguages(draft.languages),
       tags: splitTags(draft.tags),
-      comments: textToHtml(draft.comments)
+      rating: draft.rating ? draft.rating * 2 : null,
+      comments: draft.comments.trim() ? textToHtml(draft.comments.trim()) : null
+    }
+
+    const idMap: Record<string, string> = {}
+    for (const row of ids) {
+      const k = row.k.trim()
+      const v = row.v.trim()
+      if (k && v) idMap[k] = v
+    }
+    patch.identifiers = idMap
+
+    if (columns.length > 0) {
+      const customPatch: Record<string, string | null> = {}
+      for (const col of columns) {
+        const v = (custom[col.label] ?? '').trim()
+        if (v) customPatch[col.label] = v
+      }
+      if (Object.keys(customPatch).length > 0) patch.custom = customPatch
     }
 
     setSaving(true)
+    setSaveError('')
     try {
       const res = await window.api.invoke<ApplyResult>(CH.metadataApply, [book.id], patch)
-      if (res.ok && res.updated > 0) {
-        toast('已保存', 'success')
-        await reload()
-        onCancel()
+      if (!res.ok) {
+        const first = res.failed?.[0]?.error
+        setSaveError(first ? cleanError(first) : res.message || '保存失败')
         return
       }
-      setSaveError(cleanError(res.message ?? res.failed[0]?.error ?? '没有字段被写入'))
-      toast('保存失败', 'error')
+      toast('元数据已保存')
+      await reload()
+      onCancel()
     } catch (e) {
-      setSaveError(cleanError(e instanceof Error ? e.message : String(e)))
-      toast('保存失败', 'error')
+      setSaveError(String(e))
     } finally {
       setSaving(false)
     }
   }
 
+  const filled = useMemo(() => columns.filter((c) => c.datatype !== 'composite'), [columns])
+
   return (
     <div className="edit-form">
       <style>{METADATA_CSS}</style>
 
-      {calibreRunning ? (
-        <div className="warn-box">
-          calibre 正在运行，书库被它锁着。关掉 calibre 再回来保存，现在改了也会失败。
-        </div>
-      ) : null}
+      {calibreRunning ? <div className="warn-box">calibre 正在运行，书库被它锁着</div> : null}
 
       <div className="me-web">
         <input
           className="input"
           value={webQuery}
-          placeholder="书名或 ISBN"
           onChange={(e) => setWebQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') void webLookup()
@@ -197,7 +225,6 @@ export default function MetadataEditor({
               key={`${h.source}-${h.id}`}
               className="me-hit"
               onClick={() => fillFrom(h)}
-              title="填入表单，不会立刻写库"
             >
               {h.coverUrl ? (
                 <img src={h.coverUrl} alt="" width={48} height={64} />
@@ -223,146 +250,129 @@ export default function MetadataEditor({
       ) : null}
 
       <div className="me-grid">
+        <Field label="书名" error={errors.title}>
+          <input className="input" value={draft.title} onChange={(e) => set('title', e.target.value)} />
+        </Field>
 
-        <label className="form-row">
-          <span>书名</span>
+        <Field label="作者">
+          <input className="input" value={draft.authors} onChange={(e) => set('authors', e.target.value)} />
+        </Field>
+
+        <Field label="作者排序">
+          <input className="input" value={draft.authorSort} onChange={(e) => set('authorSort', e.target.value)} />
+        </Field>
+
+        <Field label="系列">
+          <input className="input" value={draft.series} onChange={(e) => set('series', e.target.value)} />
+        </Field>
+
+        <Field label="系列序号" error={errors.seriesIndex}>
           <input
             className="input"
-            value={draft.title}
-            onChange={(e) => set('title', e.target.value)}
-          />
-          {errors.title ? <em className="me-err">{errors.title}</em> : null}
-        </label>
-
-        <label className="form-row">
-          <span>作者（多作者用 & 分隔）</span>
-          <input
-            className="input"
-            value={draft.authors}
-            placeholder="曹雪芹 & 高鹗"
-            onChange={(e) => set('authors', e.target.value)}
-          />
-        </label>
-
-        <label className="form-row">
-          <span>系列</span>
-          <input
-            className="input"
-            value={draft.series}
-            placeholder="留空即不在任何系列"
-            onChange={(e) => set('series', e.target.value)}
-          />
-        </label>
-
-        <label className="form-row">
-          <span>系列序号</span>
-          <input
-            className="input"
-            value={draft.seriesIndex}
             inputMode="decimal"
-            placeholder="留空即清空"
+            value={draft.seriesIndex}
             onChange={(e) => set('seriesIndex', e.target.value)}
           />
-          {errors.seriesIndex ? <em className="me-err">{errors.seriesIndex}</em> : null}
-        </label>
+        </Field>
 
-        <label className="form-row">
-          <span>出版社</span>
-          <input
-            className="input"
-            value={draft.publisher}
-            placeholder="留空即清空"
-            onChange={(e) => set('publisher', e.target.value)}
-          />
-        </label>
+        <Field label="出版社">
+          <input className="input" value={draft.publisher} onChange={(e) => set('publisher', e.target.value)} />
+        </Field>
 
-        <label className="form-row">
-          <span>出版日期（yyyy-mm-dd）</span>
-          <input
-            className="input"
-            value={draft.pubdate}
-            placeholder="2008-05-01，留空即未知"
-            onChange={(e) => set('pubdate', e.target.value)}
-          />
-          {errors.pubdate ? <em className="me-err">{errors.pubdate}</em> : null}
-        </label>
+        <Field label="出版日期" error={errors.pubdate}>
+          <input className="input" value={draft.pubdate} onChange={(e) => set('pubdate', e.target.value)} />
+        </Field>
 
-        <label className="form-row">
-          <span>语言（ISO 码，多个用逗号）</span>
-          <input
-            className="input"
-            value={draft.languages}
-            placeholder="chi、eng"
-            onChange={(e) => set('languages', e.target.value)}
-          />
-          {errors.languages ? <em className="me-err">{errors.languages}</em> : null}
-        </label>
+        <Field label="语言">
+          <input className="input" value={draft.languages} onChange={(e) => set('languages', e.target.value)} />
+        </Field>
 
-        <div className="form-row">
-          <span>评分（0–5 星）</span>
-          <StarRating
-            value={draft.rating}
-            onChange={(v) => set('rating', v)}
-          />
-        </div>
+        <Field label="评分">
+          <StarRating value={draft.rating} onChange={(v) => set('rating', v)} />
+        </Field>
 
-        <label className="form-row me-full">
-          <span>标签（逗号或顿号分隔）</span>
-          <input
-            className="input"
-            value={draft.tags}
-            placeholder="古典文学, 长篇小说"
-            onChange={(e) => set('tags', e.target.value)}
-          />
-        </label>
+        <Field label="标签">
+          <input className="input" value={draft.tags} onChange={(e) => set('tags', e.target.value)} />
+        </Field>
 
-        <label className="form-row me-full">
-          <span>简介</span>
-          <textarea
-            className="textarea"
-            value={draft.comments}
-            placeholder="没有就留空"
-            onChange={(e) => set('comments', e.target.value)}
-          />
-        </label>
-
-        <div className="me-full me-readonly">
-          <div className="me-readonly-head">
-            标识符
-            <span className="me-note">只读 · 写库接口暂时改不了 ISBN / ASIN</span>
-          </div>
-          {ids.length === 0 ? (
-            <span className="me-note">这本书还没有 ISBN / ASIN。</span>
-          ) : (
-            <div className="me-ids">
-              {ids.map(([key, value]) => (
-                <div className="me-id" key={key}>
-                  <span className="me-id-k">{key}</span>
-                  <code className="me-id-v">{value}</code>
-                  <CopyText value={value} label={`${key.toUpperCase()} ${value}`} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {filled.map((col) => (
+          <Field key={col.label} label={col.name || col.label}>
+            {col.datatype === 'bool' ? (
+              <select
+                className="select"
+                value={custom[col.label] ?? ''}
+                onChange={(e) => setCustom((p) => ({ ...p, [col.label]: e.target.value }))}
+              >
+                <option value="">否</option>
+                <option value="1">是</option>
+              </select>
+            ) : col.datatype === 'enumeration' && col.options.length > 0 ? (
+              <select
+                className="select"
+                value={custom[col.label] ?? ''}
+                onChange={(e) => setCustom((p) => ({ ...p, [col.label]: e.target.value }))}
+              >
+                <option value="" />
+                {col.options.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="input"
+                value={custom[col.label] ?? ''}
+                onChange={(e) => setCustom((p) => ({ ...p, [col.label]: e.target.value }))}
+              />
+            )}
+          </Field>
+        ))}
       </div>
 
-      {saveError ? <div className="me-error-box">{saveError}</div> : null}
-
-      <div className="form-actions">
-        <button
-          className="btn btn-primary"
-          disabled={saving || calibreRunning}
-          onClick={() => void save()}
-        >
-          {saving ? '保存中…' : '保存'}
+      <div className="me-ids">
+        <div className="me-ids-head">标识符</div>
+        {ids.map((row, i) => (
+          <div className="me-id-row" key={`id-${i}`}>
+            <input
+              className="input me-id-key"
+              value={row.k}
+              onChange={(e) => setIds((p) => p.map((x, j) => (j === i ? { ...x, k: e.target.value } : x)))}
+            />
+            <input
+              className="input"
+              value={row.v}
+              onChange={(e) => setIds((p) => p.map((x, j) => (j === i ? { ...x, v: e.target.value } : x)))}
+            />
+            <button type="button" className="btn btn-sm" onClick={() => setIds((p) => p.filter((_, j) => j !== i))}>
+              删除
+            </button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-sm" onClick={() => setIds((p) => [...p, { k: '', v: '' }])}>
+          添加标识符
         </button>
-        <button className="btn" disabled={saving} onClick={onCancel}>
+      </div>
+
+      <label className="form-row">
+        <span>简介</span>
+        <textarea
+          className="textarea"
+          rows={9}
+          value={draft.comments}
+          onChange={(e) => set('comments', e.target.value)}
+        />
+      </label>
+
+      {saveError ? <div className="warn-box">{saveError}</div> : null}
+
+      <div className="me-actions">
+        <button className="btn btn-primary" disabled={saving || calibreRunning} onClick={() => void save()}>
+          {saving ? '保存中' : '保存'}
+        </button>
+        <button className="btn" onClick={onCancel}>
           取消
         </button>
-        <span className="me-note" style={{ alignSelf: 'center' }}>
-          留空保存就是清空；系列序号只认数字。
-        </span>
       </div>
     </div>
   )

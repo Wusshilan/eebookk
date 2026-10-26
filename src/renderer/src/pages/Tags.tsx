@@ -270,7 +270,6 @@ export default function Tags(): React.ReactElement {
     const old = picked[0]
     const input = await ask({
       title: `重命名标签「${old}」`,
-      message: '只改标签名，不会删除书籍，也不会动书库文件。',
       label: '新名称',
       defaultValue: old,
       okText: '重命名'
@@ -308,7 +307,7 @@ export default function Tags(): React.ReactElement {
       picked.slice(0, 8).join('、') + (picked.length > 8 ? ` 等 ${picked.length} 个` : '')
     const yes = await confirm({
       title: `从所有书里删除这 ${picked.length} 个标签？`,
-      message: `${preview}\n\n只删标签，不会删除书籍，也不会动书库文件。`,
+      message: preview,
       okText: '删除',
       danger: true
     })
@@ -358,7 +357,6 @@ export default function Tags(): React.ReactElement {
         <input
           className="input"
           style={{ width: 200 }}
-          placeholder="搜索标签"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />

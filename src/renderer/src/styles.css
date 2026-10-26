@@ -2852,3 +2852,48 @@ html.density-compact .grid {
   color: var(--t2);
   padding-bottom: 3px;
 }
+/* ================= 元数据编辑器：标识符 / 操作行 ================= */
+
+.me-ids {
+  margin: 6px 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.me-ids-head {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.me-id-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.me-id-key {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+}
+
+.me-stars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.me-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+@media (max-width: 1120px) {
+  .me-id-row {
+    grid-template-columns: 110px minmax(0, 1fr) auto;
+  }
+}

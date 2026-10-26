@@ -363,9 +363,7 @@ export default function Collections({
   const createAndAdd = async (): Promise<void> => {
     const input = await ask({
       title: '新建书单',
-      message: '书单只存在 eebookk 本地，不会写入 calibre。',
       label: '书单名称',
-      placeholder: '例如：今年想读',
       okText: '新建'
     })
     const name = input?.trim()
@@ -416,7 +414,6 @@ export default function Collections({
     if (!target) return
     const yes = await confirm({
       title: `删除书单「${target.name}」？`,
-      message: '只删书单，不会删除书籍文件，也不会动书库里的书。',
       okText: '删除',
       danger: true
     })
@@ -533,7 +530,6 @@ export default function Collections({
         <span className="spacer" />
         <input
           className="input cl-search"
-          placeholder={mode === 'favorites' ? '在收藏里搜索' : '在书单里搜索'}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
@@ -596,7 +592,6 @@ export default function Collections({
             </span>
             <input
               className="input cl-search"
-              placeholder="搜索书名 / 作者"
               value={pickWord}
               onChange={(e) => setPickWord(e.target.value)}
             />

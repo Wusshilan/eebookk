@@ -226,7 +226,6 @@ export default function App(): React.ReactElement {
     const name = await ask({
       title: '新建书单',
       label: '书单名称',
-      placeholder: '例如：待读清单',
       okText: '创建'
     })
     if (!name?.trim()) return
@@ -506,8 +505,8 @@ export default function App(): React.ReactElement {
               <IconSearch />
               <input
                 ref={searchRef}
+                title="搜索书名、作者、标签（Ctrl+K）"
                 className="search-input"
-                placeholder="搜索书名、作者、标签    Ctrl+K"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)

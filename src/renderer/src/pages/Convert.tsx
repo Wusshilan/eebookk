@@ -352,7 +352,6 @@ export default function Convert(): React.ReactElement {
 
           <input
             className="input"
-            placeholder="搜索书名 / 作者"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />

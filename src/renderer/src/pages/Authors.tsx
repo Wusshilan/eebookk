@@ -412,7 +412,6 @@ export default function Authors(): React.ReactElement {
         <input
           className="input"
           style={{ width: 200 }}
-          placeholder="搜索作者"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />

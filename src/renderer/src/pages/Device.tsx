@@ -541,7 +541,6 @@ export default function Device(): React.ReactElement {
           <div className="ds-row">
             <input
               className="input ds-search"
-              placeholder="搜索书名 / 作者"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
@@ -601,7 +600,7 @@ export default function Device(): React.ReactElement {
 
           {noEpubCount > 0 ? (
             <p className="ds-note is-warn" style={{ marginTop: 8 }}>
-              已选里有 {noEpubCount} 本没有 EPUB，推送会失败 —— 先到「转换」页转成 EPUB。
+              已选里有 {noEpubCount} 本没有 EPUB
             </p>
           ) : null}
 
