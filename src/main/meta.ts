@@ -25,6 +25,7 @@ const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 const DOUBAN_HOST = 'https://book.douban.com'
 const NEODB_HOST = 'https://neodb.social'
+const WEREAD_HOST = 'https://weread.qq.com'
 
 const TEXT_TIMEOUT_MS = 15_000
 const IMAGE_TIMEOUT_MS = 10_000
@@ -38,6 +39,7 @@ const DOUBAN_GAP_MS = 420
 const DOUBAN_ENRICH = 4
 const DOUBAN_MAX_HITS = 6
 const NEODB_MAX_HITS = 8
+const WEREAD_MAX_HITS = 10
 const COVER_CONCURRENCY = 4
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
@@ -96,6 +98,14 @@ function doubanHeaders(accept = 'text/html,application/xhtml+xml,application/xml
 
 function neodbHeaders(): Record<string, string> {
   return { Accept: 'application/json' }
+}
+
+function wereadHeaders(): Record<string, string> {
+  return {
+    Accept: 'application/json, text/plain, */*',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.6',
+    Referer: `${WEREAD_HOST}/`
+  }
 }
 
 function imageHeaders(url: string): Record<string, string> {
@@ -391,6 +401,11 @@ function coverCandidates(url: string): string[] {
   const out: string[] = []
   if (/\/view\/subject\/[sm]\/public\//.test(url)) {
     out.push(url.replace(/\/view\/subject\/[sm]\/public\//, '/view/subject/l/public/'))
+  }
+  // 微信读书的封面文件名前缀是尺寸：s_ 是 70×101 的缩略图，t9_ 是 428×616 的大图
+  // （t1…t9 都可用，数字越大越清楚）。t9_ 不存在时 probeCover 会退回原图。
+  if (/(^|\.)weread\.qq\.com$|myqcloud\.com$/i.test(hostOf(url)) && /\/s_[^/]+$/.test(url)) {
+    out.push(url.replace(/\/s_([^/]+)$/, '/t9_$1'))
   }
   out.push(url)
   return [...new Set(out)]
@@ -743,7 +758,7 @@ function neodbHit(raw: unknown): WebMetaHit | null {
     isbn: asText(row.isbn).replace(/[^0-9Xx]/g, '').toUpperCase(),
     language: asTextArray(row.language).join(','),
     rating: asNumber(row.rating),
-    summary: neodbSummary(asText(row.description)),
+    summary: plainSummary(asText(row.description)),
     coverUrl: asText(row.cover_image_url) || null,
     coverWidth: null,
     coverHeight: null,
@@ -751,8 +766,8 @@ function neodbHit(raw: unknown): WebMetaHit | null {
   }
 }
 
-/** NeoDB 的 description 多数是纯文本，偶尔带 HTML，转一次就好 */
-function neodbSummary(raw: string): string {
+/** 简介多为纯文本，偶尔带 HTML；转一次、压空白、截断 */
+function plainSummary(raw: string): string {
   if (!raw) return ''
   const text = /<[a-z][^>]*>/i.test(raw) ? htmlToText(raw) : decodeEntities(raw)
   const tidy = text
@@ -824,10 +839,106 @@ const neodb = {
 }
 
 /* ------------------------------------------------------------------ */
+/* 微信读书                                                             */
+/* ------------------------------------------------------------------ */
+
+/** 这次搜索里见过的书，detail 直接从这里取（微信读书的 book/info 要登录态） */
+const wereadCache = new Map<string, WebMetaHit>()
+
+function rememberWeread(hit: WebMetaHit): void {
+  wereadCache.set(hit.id, hit)
+  if (wereadCache.size > 300) {
+    const oldest = wereadCache.keys().next().value
+    if (oldest) wereadCache.delete(oldest)
+  }
+}
+
+function wereadHit(bookInfo: unknown): WebMetaHit | null {
+  if (!bookInfo || typeof bookInfo !== 'object' || Array.isArray(bookInfo)) return null
+  const info = bookInfo as NeodbRow
+  const id = asText(info.bookId)
+  if (!id) return null
+  // newRating 是 0–1000 的推荐值（870 人打分 829），折成 0–10 跟豆瓣 / NeoDB 对齐
+  const ratingRaw = asNumber(info.newRating)
+  const rating = ratingRaw !== null && ratingRaw > 0 && ratingRaw <= 1000 ? ratingRaw / 100 : null
+  return {
+    source: 'weread',
+    sourceName: '微信读书',
+    id,
+    title: asText(info.title) || '未命名',
+    // 译者不并进作者列：契约里没有译者字段，拼成「魏斐德 / 译 陈苏镇」写回书库会污染作者
+    authors: asText(info.author),
+    publisher: asText(info.publisher),
+    // 微信读书的接口不给出版时间
+    pubdate: '',
+    isbn: '',
+    language: '',
+    rating,
+    summary: plainSummary(asText(info.intro)),
+    coverUrl: asText(info.cover) || null,
+    coverWidth: null,
+    coverHeight: null,
+    url: asText(info.readerLink) || `${WEREAD_HOST}/web/reader/${id}`
+  }
+}
+
+const weread = {
+  id: 'weread',
+  name: '微信读书',
+  async search(query: string): Promise<WebMetaHit[]> {
+    const q = query.trim()
+    if (!q) return []
+    const url = `${WEREAD_HOST}/web/search/global?keyword=${encodeURIComponent(q)}&maxNum=${WEREAD_MAX_HITS}`
+    const res = await fetchText(url, wereadHeaders())
+    if (!res.ok) return []
+    const body = parseJsonObject(res.text)
+    const rows = Array.isArray(body?.books) ? (body?.books as unknown[]) : []
+    const hits: WebMetaHit[] = []
+    for (const row of rows.slice(0, WEREAD_MAX_HITS)) {
+      if (!row || typeof row !== 'object') continue
+      const hit = wereadHit((row as NeodbRow).bookInfo)
+      if (!hit) continue
+      rememberWeread(hit)
+      hits.push(hit)
+    }
+    await attachCovers(hits)
+    return hits
+  },
+  async detail(id: string): Promise<WebMetaHit | null> {
+    const key = String(id ?? '').trim()
+    if (!key) return null
+    const cached = wereadCache.get(key)
+    if (cached) {
+      const clone: WebMetaHit = { ...cached }
+      await attachCover(clone)
+      return clone
+    }
+    // 没登录态时 /web/book/info 会返回 {"errCode":-2010,"errMsg":"用户不存在"}，
+    // 所以这里只是兜底：真拿到书信息才返回，否则 null。
+    try {
+      const res = await fetchText(
+        `${WEREAD_HOST}/web/book/info?bookId=${encodeURIComponent(key)}`,
+        wereadHeaders(),
+        10_000
+      )
+      if (!res.ok) return null
+      const body = parseJsonObject(res.text)
+      const hit = wereadHit(body?.info ?? body?.bookInfo)
+      if (!hit) return null
+      rememberWeread(hit)
+      await attachCover(hit)
+      return hit
+    } catch {
+      return null
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* 汇总                                                                */
 /* ------------------------------------------------------------------ */
 
-const ADAPTERS = [douban, neodb] as const
+const ADAPTERS = [douban, neodb, weread] as const
 
 function webSettings(): WebMetaSettings {
   const web = ctx.settings?.get().web

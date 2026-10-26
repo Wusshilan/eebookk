@@ -657,6 +657,7 @@ export default function Settings(): React.ReactElement {
             <h2 className="set-h2">检索来源</h2>
             {[
               { id: 'douban', name: '豆瓣读书' },
+              { id: 'weread', name: '微信读书' },
               { id: 'neodb', name: 'NeoDB' }
             ].map((s) => (
               <Row key={s.id} label={s.name}>

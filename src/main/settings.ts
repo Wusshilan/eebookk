@@ -22,7 +22,7 @@ const DEFAULTS: AppSettings = {
   general: { closeToTray: false, restoreLastPage: false },
   metadata: { authorSeparator: ' & ', tagSeparator: ',', embedOnSave: false },
   device: { usbSubdir: 'eebookk', maxAttachmentMB: 25 },
-  web: { sources: ['douban', 'neodb'], minCoverWidth: 200 },
+  web: { sources: ['douban', 'weread'], minCoverWidth: 200 },
   sources: [
     {
       id: 'gutenberg',
