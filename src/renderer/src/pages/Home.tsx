@@ -109,7 +109,9 @@ function HScroll({
         disabled={atLeft}
         onClick={() => slide(-1)}
       >
-        <IconChevron width={20} height={20} />
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="hs-chev">
+          <path d="M15.5 4.5 8 12l7.5 7.5" />
+        </svg>
       </button>
       <button
         type="button"
@@ -118,7 +120,9 @@ function HScroll({
         disabled={atRight}
         onClick={() => slide(1)}
       >
-        <IconChevron width={20} height={20} />
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="hs-chev">
+          <path d="M8.5 4.5 16 12l-7.5 7.5" />
+        </svg>
       </button>
     </div>
   )

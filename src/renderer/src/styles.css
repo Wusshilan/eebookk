@@ -3671,3 +3671,62 @@ html[data-theme='dark'] .warn-box {
   color: #fff;
   border-color: var(--accent);
 }
+
+/* ---- 横滑箭头：细线 chevron，无底无边 ---- */
+
+.hs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 64px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: grid;
+  place-items: center;
+  color: #c9c9c9;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.hs-arrow svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hs-arrow:not(:disabled) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hs-arrow:hover:not(:disabled) {
+  color: var(--t1);
+  background: transparent;
+}
+
+.hs-arrow.is-left {
+  left: -40px;
+  transform: translateY(-50%);
+}
+
+.hs-arrow.is-right {
+  right: -40px;
+}
+
+@media (max-width: 1320px) {
+  .hs-arrow.is-left {
+    left: -16px;
+  }
+  .hs-arrow.is-right {
+    right: -16px;
+  }
+}
