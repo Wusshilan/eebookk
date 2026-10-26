@@ -1,9 +1,10 @@
-import { execFile, spawn } from 'node:child_process'
-import { copyFileSync, cpSync, existsSync, mkdirSync } from 'node:fs'
+﻿import { execFile, spawn } from 'node:child_process'
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, dialog, ipcMain, shell } from 'electron'
 import { promisify } from 'node:util'
 import { CH } from '../shared/ipc'
+import type { TrashEntry } from '../shared/types'
 import { ctx } from './ctx'
 import { calibreExe, isCalibreRunning } from './env'
 
@@ -183,6 +184,82 @@ export function registerLibraryActions(): void {
     })
     if (pick.canceled || !pick.filePaths.length) return { ok: false, message: '已取消' }
     return { ok: true, message: pick.filePaths[0], path: pick.filePaths[0] }
+  })
+
+
+  /* ---------------- 回收站 ---------------- */
+
+  const trashRoot = (): string => join(app.getPath('userData'), 'trash')
+
+  ipcMain.handle(CH.trashList, (): TrashEntry[] => {
+    const root = trashRoot()
+    if (!existsSync(root)) return []
+    const out: TrashEntry[] = []
+    for (const stamp of readdirSync(root, { withFileTypes: true })) {
+      if (!stamp.isDirectory()) continue
+      const base = join(root, stamp.name)
+      // 删除时按 <时间戳>/<书库相对路径> 存的，找含 metadata.opf 的目录就是一本
+      const walk = (dir: string): void => {
+        let entries: import('node:fs').Dirent[]
+        try {
+          entries = readdirSync(dir, { withFileTypes: true })
+        } catch {
+          return
+        }
+        if (entries.some((e) => e.isFile() && e.name === 'metadata.opf')) {
+          const files = entries.filter((e) => e.isFile()).length
+          const bookFolder = dir.slice(base.length + 1).split(/[\\/]/).pop() ?? ''
+          out.push({
+            stamp: stamp.name,
+            path: dir,
+            title: bookFolder || stamp.name,
+            files
+          })
+          return
+        }
+        for (const e of entries) {
+          if (e.isDirectory()) walk(join(dir, e.name))
+        }
+      }
+      walk(base)
+    }
+    return out.sort((a, b) => b.stamp.localeCompare(a.stamp))
+  })
+
+  ipcMain.handle(CH.trashRestore, async (_e, paths: string[]) => {
+    const list = (paths ?? []).filter((p) => p && existsSync(p))
+    if (!list.length) return { ok: false, message: '没有可还原的书' }
+    if (await isCalibreRunning()) {
+      return { ok: false, message: 'calibre 正在运行，先关掉它再还原' }
+    }
+    const res = await calibredb(['add', ...list])
+    if (!res.ok) return { ok: false, message: res.err }
+    // 还原成功后清掉对应的回收目录
+    for (const p of list) {
+      try {
+        const stampDir = p.split(/[\\/]/).slice(0, -1).join('\\')
+        rmSync(p, { recursive: true, force: true })
+        if (existsSync(stampDir) && readdirSync(stampDir).length === 0) {
+          rmSync(stampDir, { recursive: true, force: true })
+        }
+      } catch {
+        /* 清不掉就留着，不影响还原结果 */
+      }
+    }
+    ctx.reload()
+    return { ok: true, message: `已还原 ${list.length} 本` }
+  })
+
+  ipcMain.handle(CH.trashClear, (_e, stamp?: string) => {
+    const root = trashRoot()
+    const target = stamp ? join(root, stamp) : root
+    if (!existsSync(target)) return { ok: false, message: '回收站是空的' }
+    try {
+      rmSync(target, { recursive: true, force: true })
+      return { ok: true, message: '已清空' }
+    } catch (e) {
+      return { ok: false, message: String(e) }
+    }
   })
 
   /** 在文件管理器里定位路径；文件就选中它，目录就打开它 */

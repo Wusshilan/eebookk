@@ -298,6 +298,18 @@ export interface ReaderInfo {
   error?: string
 }
 
+/* ---------------- 回收站 ---------------- */
+
+export interface TrashEntry {
+  /** 删除时的时间戳目录名 */
+  stamp: string
+  /** 书籍目录绝对路径 */
+  path: string
+  title: string
+  /** 目录里的文件数 */
+  files: number
+}
+
 /* ---------------- 内置电子书编辑器 ---------------- */
 
 export interface EpubFileEntry {

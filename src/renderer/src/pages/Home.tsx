@@ -103,12 +103,14 @@ function SourceRow({
   title,
   items,
   error,
+  loading,
   busyId,
   onPick
 }: {
   title: string
   items: CatalogItem[]
   error?: string
+  loading?: boolean
   busyId: string
   onPick: (item: CatalogItem) => void
 }): React.ReactElement {
@@ -118,7 +120,15 @@ function SourceRow({
         <span>{title}</span>
         {error ? <em className="home-row-err">{error}</em> : null}
       </div>
-      {items.length === 0 ? null : (
+      {items.length === 0 ? (
+        loading ? (
+          <div className="home-covers">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="home-skeleton" />
+            ))}
+          </div>
+        ) : null
+      ) : (
         <div className="home-covers">
           {items.map((it) => (
             <button
@@ -150,6 +160,7 @@ export default function Home(): React.ReactElement {
   const [catalog, setCatalog] = useState<CatalogItem[]>([])
   const [catalogError, setCatalogError] = useState('')
   const [busyId, setBusyId] = useState('')
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
 
   // 首页第二行和第二张 banner 走外部书目源（古登堡），失败不影响其它部分
   useEffect(() => {
@@ -163,6 +174,9 @@ export default function Home(): React.ReactElement {
       })
       .catch(() => {
         if (alive) setCatalogError('连不上书目源')
+      })
+      .finally(() => {
+        if (alive) setLoadingCatalog(false)
       })
     return () => {
       alive = false
@@ -226,7 +240,7 @@ export default function Home(): React.ReactElement {
           word="古登堡"
           sub={catalog.length ? `公共版权 · 已取到 ${catalog.length} 本` : '公共版权·公共领域'}
           covers={remoteCovers.length ? remoteCovers : localCovers}
-          onClick={() => setCatalog((prev) => prev)}
+          onClick={() => navigate({ name: 'library' })}
         />
         <BannerCard
           tone="orange"
@@ -248,6 +262,7 @@ export default function Home(): React.ReactElement {
         title="Project Gutenberg · 公共版权"
         items={catalog}
         error={catalogError}
+        loading={loadingCatalog}
         busyId={busyId}
         onPick={(item) => void pickExternal(item)}
       />

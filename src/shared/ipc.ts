@@ -81,6 +81,11 @@ export const CH = {
   coverSearch: 'meta:coverSearch',
   coverApplyUrl: 'meta:coverApplyUrl',
 
+  // 回收站
+  trashList: 'trash:list',
+  trashRestore: 'trash:restore',
+  trashClear: 'trash:clear',
+
   // 内置电子书编辑器
   epubList: 'epubEdit:list',
   epubRead: 'epubEdit:read',

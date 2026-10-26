@@ -162,7 +162,17 @@ export default function MetadataEditor({
     for (const row of ids) {
       const k = row.k.trim()
       const v = row.v.trim()
-      if (k && v) idMap[k] = v
+      if (!k || !v) continue
+      // calibredb 用逗号分隔标识符、用冒号分隔键值，带了就会把整组写坏
+      if (k.includes(',') || k.includes(':')) {
+        next.ids = `标识符名「${k}」不能包含逗号或冒号`
+        return
+      }
+      if (v.includes(',')) {
+        next.ids = `标识符「${k}」的值不能包含逗号`
+        return
+      }
+      idMap[k] = v
     }
     patch.identifiers = idMap
 
@@ -170,7 +180,9 @@ export default function MetadataEditor({
       const customPatch: Record<string, string | null> = {}
       for (const col of columns) {
         const v = (custom[col.label] ?? '').trim()
+        // 空值也要提交，否则自定义列永远清不掉；本来就没有值的不用发
         if (v) customPatch[col.label] = v
+        else if ((book.custom?.[col.label] ?? '') !== '') customPatch[col.label] = null
       }
       if (Object.keys(customPatch).length > 0) patch.custom = customPatch
     }
@@ -332,6 +344,7 @@ export default function MetadataEditor({
 
       <div className="me-ids">
         <div className="me-ids-head">标识符</div>
+        {errors.ids ? <em className="me-err">{errors.ids}</em> : null}
         {ids.map((row, i) => (
           <div className="me-id-row" key={`id-${i}`}>
             <input

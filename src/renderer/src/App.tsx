@@ -296,15 +296,14 @@ export default function App(): React.ReactElement {
   }, [])
 
   // 本应用的阅读进度合并进书籍列表：底部常驻条、首页「在读」都用它
-  const mergedBooks = useMemo(
-    () =>
-      payload
-        ? payload.books.map((b) =>
-            readPos[String(b.id)] != null ? { ...b, posFrac: readPos[String(b.id)] } : b
-          )
-        : [],
-    [payload, readPos]
-  )
+  // 只给阅读进度变了的书新建对象，其余保持同一引用，避免 300 多张卡片整体重渲染
+  const mergedBooks = useMemo(() => {
+    if (!payload) return []
+    return payload.books.map((b) => {
+      const frac = readPos[String(b.id)]
+      return frac != null && frac !== b.posFrac ? { ...b, posFrac: frac } : b
+    })
+  }, [payload, readPos])
 
   const nav: NavItem[] = [
     { key: 'home', label: '首页', icon: <IconHome /> },

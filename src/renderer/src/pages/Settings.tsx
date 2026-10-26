@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import type { AppSettings, BookSource, UpdateInfo } from '../../../shared/types'
+import type { AppSettings, BookSource, TrashEntry, UpdateInfo } from '../../../shared/types'
 import { CH } from '../../../shared/ipc'
 import { useApp } from '../app/context'
 import { applyAppearance } from '../lib/appearance'
@@ -74,6 +74,7 @@ export default function Settings(): React.ReactElement {
   const [checking, setChecking] = useState(false)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [loadError, setLoadError] = useState('')
+  const [trash, setTrash] = useState<TrashEntry[]>([])
 
   useEffect(() => {
     let alive = true
@@ -90,6 +91,10 @@ export default function Settings(): React.ReactElement {
       .catch((e: unknown) => {
         if (alive) setLoadError(`读取设置失败：${String(e)}`)
       })
+    window.api
+      .invoke<TrashEntry[]>(CH.trashList)
+      .then((list) => alive && setTrash(Array.isArray(list) ? list : []))
+      .catch(() => undefined)
     window.api
       .invoke<UpdateInfo>(CH.updateCheck)
       .then((info) => alive && setUpdateInfo(info))
@@ -127,12 +132,15 @@ export default function Settings(): React.ReactElement {
     })
     if (!name?.trim()) return
     const url = await ask({
-      title: '书目源地址',
-      message: '填目录根地址，形如 https://example.org/opds',
-      label: 'OPDS 地址',
-      okText: '添加'
+      title: 'OPDS 地址',
+      okText: '下一步'
     })
     if (!url?.trim()) return
+    const search = await ask({
+      title: '搜索地址模板',
+      label: '用 {q} 代表关键词',
+      okText: '添加'
+    })
     const id = `custom-${Date.now().toString(36)}`
     setDraft((prev) =>
       prev
@@ -145,7 +153,7 @@ export default function Settings(): React.ReactElement {
                 name: name.trim(),
                 kind: 'opds',
                 url: url.trim(),
-                searchUrl: '',
+                searchUrl: (search ?? '').trim(),
                 enabled: true
               }
             ]
@@ -226,6 +234,22 @@ export default function Settings(): React.ReactElement {
   const backup = async (): Promise<void> => {
     const res = await invoke<{ ok: boolean; message: string }>(CH.libraryBackup)
     toast(res.message, res.ok ? 'success' : 'error')
+  }
+
+  const restoreTrash = async (): Promise<void> => {
+    const res = await invoke<{ ok: boolean; message: string }>(CH.trashRestore, trash.map((t) => t.path))
+    toast(res.message, res.ok ? 'success' : 'error')
+    if (res.ok) {
+      const list = await invoke<TrashEntry[]>(CH.trashList)
+      setTrash(Array.isArray(list) ? list : [])
+      await reload()
+    }
+  }
+
+  const clearTrash = async (): Promise<void> => {
+    const res = await invoke<{ ok: boolean; message: string }>(CH.trashClear)
+    toast(res.message, res.ok ? 'success' : 'error')
+    if (res.ok) setTrash([])
   }
 
   const openCalibre = async (): Promise<void> => {
@@ -371,6 +395,17 @@ export default function Settings(): React.ReactElement {
               <button className="btn btn-sm" onClick={() => void backup()}>
                 立即备份
               </button>
+            </Row>
+            <Row label="回收站">
+              <div className="set-inline">
+                <span className="set-ro">{trash.length} 本</span>
+                <button className="btn btn-sm" disabled={!trash.length || calibreRunning} onClick={() => void restoreTrash()}>
+                  全部还原
+                </button>
+                <button className="btn btn-sm" disabled={!trash.length} onClick={() => void clearTrash()}>
+                  清空
+                </button>
+              </div>
             </Row>
             <Row label="calibre">
               <div className="set-inline">
@@ -669,7 +704,10 @@ export default function Settings(): React.ReactElement {
                 <input
                   className="input set-port"
                   value={draft.web.minCoverWidth}
-                  onChange={(e) => patch('web', { minCoverWidth: Number(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const n = Number(e.target.value)
+                    patch('web', { minCoverWidth: Number.isFinite(n) && n > 0 ? Math.min(4000, Math.round(n)) : 1 })
+                  }}
                 />
                 <span className="set-unit">px</span>
               </div>

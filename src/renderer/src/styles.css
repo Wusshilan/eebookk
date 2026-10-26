@@ -187,6 +187,8 @@ textarea {
 .nav-item {
   height: 48px;
   border-radius: var(--radius-nav);
+  /* Figma 101-253：cornerSmoothing 0.6 */
+  corner-shape: var(--smooth);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -3068,5 +3070,23 @@ html.density-compact .grid {
 @media (max-width: 1120px) {
   .ed-body {
     grid-template-columns: 200px minmax(0, 1fr);
+  }
+}
+
+.home-skeleton {
+  aspect-ratio: 145 / 194;
+  border-radius: 6px;
+  corner-shape: var(--smooth);
+  background: linear-gradient(100deg, #efefef 30%, #f7f7f7 45%, #efefef 60%);
+  background-size: 300% 100%;
+  animation: home-shimmer 1.4s linear infinite;
+}
+
+@keyframes home-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
   }
 }

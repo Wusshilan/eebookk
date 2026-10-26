@@ -27,7 +27,7 @@ function bytes(n: number): string {
 }
 
 export default function Editor({ id }: { id: number }): React.ReactElement {
-  const { books, navigate, calibreRunning, reload, toast } = useApp()
+  const { books, navigate, calibreRunning, reload, toast, confirm } = useApp()
   const book = books.find((b) => b.id === id)
 
   const [files, setFiles] = useState<EpubFileEntry[]>([])
@@ -40,6 +40,10 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
 
   useEffect(() => {
     let alive = true
+    setFiles([])
+    setContent(null)
+    setCurrent('')
+    setDirty(false)
     window.api
       .invoke<EpubFileEntry[]>(CH.epubList, id)
       .then((list) => {
@@ -60,6 +64,15 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
   }, [id])
 
   const open = async (path: string): Promise<void> => {
+    if (dirty && content && content.path !== path) {
+      const ok = await confirm({
+        title: '放弃未保存的修改？',
+        okText: '放弃',
+        cancelText: '继续编辑',
+        danger: true
+      })
+      if (!ok) return
+    }
     setError('')
     setBusy(true)
     try {
@@ -129,6 +142,19 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
     return KIND_ORDER.filter((k) => map.has(k)).map((k) => [k, map.get(k)!] as const)
   }, [files])
 
+  const leave = async (): Promise<void> => {
+    if (dirty) {
+      const ok = await confirm({
+        title: '放弃未保存的修改？',
+        okText: '放弃',
+        cancelText: '继续编辑',
+        danger: true
+      })
+      if (!ok) return
+    }
+    navigate({ name: 'book', id })
+  }
+
   if (!book) {
     return (
       <div className="page">
@@ -140,7 +166,7 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
   return (
     <div className="page page-editor">
       <div className="ed-head">
-        <button className="btn btn-sm" onClick={() => navigate({ name: 'book', id })}>
+        <button className="btn btn-sm" onClick={() => void leave()}>
           返回
         </button>
         <span className="ed-title">{book.title}</span>
@@ -192,7 +218,14 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
         </aside>
 
         <section className="ed-main">
-          {error ? <div className="warn-box">{error}</div> : null}
+          {error ? (
+            <div className="warn-box">
+              {error}
+              <button className="btn btn-sm" style={{ marginLeft: 10 }} onClick={() => window.location.reload()}>
+                重试
+              </button>
+            </div>
+          ) : null}
           {content?.status === 'ok' ? (
             <textarea
               className="ed-code"
