@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   AppSettings, CollectionsStore, ConvertJob, LibraryPayload, ShortcutSettings, TaskSnapshot, UpdateInfo
 } from '../../shared/types'
@@ -487,12 +487,13 @@ export default function App(): React.ReactElement {
 
   if (error) return <div className="boot-error">书库读取失败：{error}</div>
   if (!payload) return <div className="boot-loading" />
-  if (!stats || stats.total === 0) {
+  // 只有「根本没找到书库」才算启动失败；空书库是正常状态（内置 calibre 首次启动就是空的）
+  if (!payload.path) {
     return (
       <div className="boot-error">
         没有找到 calibre 书库。
         <br />
-        请确认已安装 calibre 并至少有一个书库。
+        请确认 calibre 已就绪，或在设置里指定 metadata.db 所在的目录。
         <br />
         <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate({ name: 'settings' })}>
           去设置书库路径

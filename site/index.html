@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eebookk — 给 calibre 书库换一个好用的壳</title>
+<meta name="description" content="eebookk 是 calibre 书库的桌面外壳：本地书库管理、元数据编辑、批量转换、Kindle 推送与内置 EPUB 阅读器。Windows x64，MIT 开源。">
+<meta name="theme-color" content="#f7f6f3">
+<meta name="color-scheme" content="light">
+<meta property="og:type" content="website">
+<meta property="og:title" content="eebookk — 给 calibre 书库换一个好用的壳">
+<meta property="og:description" content="本地书库管理、元数据编辑、批量转换、Kindle 推送与内置 EPUB 阅读器。书库仍然是 calibre 的书库。">
+<meta property="og:image" content="assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="eebookk — 给 calibre 书库换一个好用的壳">
+<meta name="twitter:description" content="本地书库管理、元数据编辑、批量转换、Kindle 推送与内置 EPUB 阅读器。">
+<meta name="twitter:image" content="assets/og.png">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<script>
+  document.documentElement.classList.add('js');
+  if (location.search.indexOf('static') > -1) document.documentElement.classList.add('static');
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "eebookk",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10, Windows 11",
+  "softwareVersion": "0.1.22",
+  "description": "calibre 书库的桌面外壳：书库管理、元数据编辑、批量转换、Kindle 推送与内置 EPUB 阅读器。",
+  "url": "https://github.com/Wusshilan/eebookk",
+  "downloadUrl": "https://github.com/Wusshilan/eebookk/releases/latest",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+  "author": { "@type": "Person", "name": "就一直" }
+}
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-library" viewBox="0 0 24 24"><rect x="3.5" y="4" width="6" height="16" rx="1.2"/><rect x="10.8" y="4" width="6" height="16" rx="1.2"/><path d="M18.1 5.2l3 15.1"/><path d="M18.1 5.2l2.9-.6 1.5 15.1-2.9.6z"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M4 20l8.5-8.5"/><path d="M14.5 3.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/><path d="M19 13.5l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z"/></symbol>
+  <symbol id="i-convert" viewBox="0 0 24 24"><path d="M4 8h13"/><path d="M14 4.5L17.5 8 14 11.5"/><path d="M20 16H7"/><path d="M10 12.5L6.5 16l3.5 3.5"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect x="5.5" y="2.5" width="13" height="19" rx="2.6"/><path d="M10 5.2h4"/><circle cx="12" cy="18.1" r=".9" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-reader" viewBox="0 0 24 24"><path d="M12 6.6C10.5 5.1 8.3 4.4 4.8 4.4v14.1c3.5 0 5.7.7 7.2 2.2 1.5-1.5 3.7-2.2 7.2-2.2V4.4c-3.5 0-5.7.7-7.2 2.2z"/><path d="M12 6.6v14.1"/></symbol>
+  <symbol id="i-editor" viewBox="0 0 24 24"><path d="M8.5 8.5L5 12l3.5 3.5"/><path d="M15.5 8.5L19 12l-3.5 3.5"/><path d="M13.5 5l-3 14"/></symbol>
+  <symbol id="i-metadata" viewBox="0 0 24 24"><path d="M4 7h7.5"/><path d="M16.5 7H20"/><path d="M4 17h3.5"/><path d="M12.5 17H20"/><circle cx="14" cy="7" r="2.1"/><circle cx="10" cy="17" r="2.1"/></symbol>
+  <symbol id="i-cover" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17.5l4.6-5.2 3.7 3.7 2.5-2.4 3.2 3.9"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M4.5 4.5h6.8l8.2 8.2-6.8 6.8-8.2-8.2z"/><circle cx="8.6" cy="8.6" r="1.4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.7-3.6 3.4-5.4 7-5.4s6.3 1.8 7 5.4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4h11v17l-5.5-3.7L6.5 21z"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.2l8.8 4.8L12 12.8 3.2 8z"/><path d="M3.2 12.4L12 17.2l8.8-4.8"/><path d="M3.2 16.6L12 21.4l8.8-4.8"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><path d="M6 10h.01M9.2 10h.01M12.4 10h.01M15.6 10h.01M18.8 10h.01"/><path d="M8 14h8"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.2a8.8 8.8 0 100 17.6h1.4a2.3 2.3 0 000-4.6h-1a2 2 0 010-4h4.7a3.9 3.9 0 003.7-5.2A8.8 8.8 0 0012 3.2z"/><circle cx="8" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="6.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.4" cy="9.4" r="1.1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2l7 2.9v5.2c0 4.4-2.9 7.9-7 9.9-4.1-2-7-5.5-7-9.9V6.1z"/><path d="M8.8 11.9l2.2 2.2 4.2-4.4"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.4-5.7"/><path d="M20 4v4h-4"/></symbol>
+  <symbol id="i-tasks" viewBox="0 0 24 24"><path d="M8 6.5h12M8 12h12M8 17.5h12"/><path d="M4 6.5h.01M4 12h.01M4 17.5h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4.5 12h14"/><path d="M13 6.5l5.5 5.5-5.5 5.5"/></symbol>
+  <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M8.5 7H17v8.5"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.75 5.48.75 11.75c0 4.97 3.22 9.18 7.69 10.67.56.1.77-.24.77-.54 0-.27-.01-1.16-.02-2.1-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.63 1.22 3.27.93.1-.73.39-1.22.71-1.5-2.5-.28-5.13-1.25-5.13-5.57 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.8 10.8 0 012.82-.38c.96 0 1.92.13 2.82.38 2.15-1.45 3.1-1.15 3.1-1.15.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.33-2.64 5.28-5.15 5.56.4.35.76 1.03.76 2.08 0 1.5-.01 2.71-.01 3.08 0 .3.2.65.78.54a11.26 11.26 0 007.68-10.67C23.25 5.48 18.27.5 12 .5z"/></symbol>
+</svg>
+
+<header class="site-header" data-header>
+  <div class="container header-inner">
+    <a class="brand" href="#top" aria-label="eebookk 首页">
+      <img class="brand-logo" src="assets/logo.svg" width="40" height="40" alt="">
+      <span class="brand-name">eebookk</span>
+      <span class="brand-sub">for calibre</span>
+    </a>
+    <nav class="nav" id="site-nav" aria-label="主导航">
+      <a href="#features">功能</a>
+      <a href="#tour">界面</a>
+      <a href="#download">下载</a>
+      <a href="#faq">常见问题</a>
+      <a class="nav-github" href="https://github.com/Wusshilan/eebookk" target="_blank" rel="noopener noreferrer">
+        <svg class="icon icon--github" aria-hidden="true"><use href="#i-github"/></svg>
+        <span>GitHub</span>
+      </a>
+    </nav>
+    <a class="btn btn-primary btn-sm header-cta" href="#download">下载</a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="打开菜单" data-nav-toggle>
+      <svg class="icon icon-menu" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="container hero-copy">
+      <p class="hero-badge reveal"><span class="pulse" aria-hidden="true"></span>v0.1.22 · Windows x64 · MIT</p>
+      <h1 class="reveal">给 calibre 书库，<br>换一个<span class="mark">好用的壳</span>。</h1>
+      <p class="hero-lede reveal">找书、改元数据、批量转换、推送 Kindle、直接读 EPUB —— 日常最常用的几件事，都在一个窗口里完成。书库仍然是 calibre 的书库：关掉 eebookk，calibre 打开还是原样。</p>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary btn-lg" href="#download">
+          <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+          下载 Windows 版
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/Wusshilan/eebookk" target="_blank" rel="noopener noreferrer">
+          <svg class="icon icon--github" aria-hidden="true"><use href="#i-github"/></svg>
+          在 GitHub 上查看
+        </a>
+      </div>
+      <p class="hero-meta reveal">122 MB · Windows 10 / 11 x64 · 需要本机已安装 calibre</p>
+    </div>
+
+    <div class="container hero-visual reveal">
+      <div class="hero-window">
+        <div class="window-bar" aria-hidden="true">
+          <span class="wb-dot wb-dot--g"></span>
+          <span class="wb-dot"></span>
+          <span class="wb-dot"></span>
+          <span class="wb-title">eebookk — 首页</span>
+        </div>
+        <img src="assets/shots/home.webp" width="1920" height="1080" fetchpriority="high" decoding="async"
+             alt="eebookk 首页：banner 横滑书封墙、从书库推荐、Project Gutenberg 公共版权书与底部在读进度">
+      </div>
+      <div class="float-card float-card--a" aria-hidden="true">
+        <span class="float-kicker">读取 306 本书的元数据</span>
+        <strong>1 <span>ms</span></strong>
+      </div>
+      <div class="float-card float-card--b" aria-hidden="true">
+        <span class="float-kicker">calibre 运行时</span>
+        <strong class="float-strong-sm">自动锁定编辑</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust" aria-label="特性概览">
+    <div class="container trust-inner">
+      <div class="trust-item reveal">
+        <span class="trust-num">1<span>ms</span></span>
+        <span class="trust-label">读完 306 本书的元数据</span>
+      </div>
+      <div class="trust-item reveal">
+        <span class="trust-num">0<span>处</span></span>
+        <span class="trust-label">改动 calibre 的数据格式</span>
+      </div>
+      <div class="trust-item reveal">
+        <span class="trust-num">100<span>%</span></span>
+        <span class="trust-label">书籍与元数据留在本机</span>
+      </div>
+      <div class="trust-item reveal">
+        <span class="trust-num">MIT</span>
+        <span class="trust-label">源代码公开，可自行构建</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section features" id="features">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">核心功能</p>
+        <h2>不是换一层皮，<br>是把每天要用的几件事重做了一遍。</h2>
+        <p>calibre 的功能很全，只是界面停在 2005 年。eebookk 不重写书库，只把找书、整理、转换、推送、阅读这几个高频动作，做成一个连贯的工作台。</p>
+      </div>
+
+      <div class="bento">
+        <article class="bcard bcard--wide reveal">
+          <div class="bcard-body">
+            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg></span>
+            <h3>书库管理</h3>
+            <p>封面墙与表格两种视图，按书名、作者、入库时间、大小、评分排序。Ctrl 点击多选，底部操作条一次转换、推送、加入书单或删除。</p>
+            <ul class="chips">
+              <li class="chip">封面墙 / 表格</li>
+              <li class="chip">缺简介 · 缺封面 · 无 EPUB</li>
+              <li class="chip">批量操作</li>
+            </ul>
+          </div>
+          <img class="bcard-shot" src="assets/shots/library.webp" width="1600" height="900" loading="lazy" decoding="async"
+               alt="eebookk 书库页：封面墙视图与筛选条">
+        </article>
+
+        <article class="bcard bcard--wide reveal">
+          <div class="bcard-body">
+            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
+            <h3>整理台</h3>
+            <p>一次扫描给出书库健康度和问题清单：缺简介、缺标签、缺封面、疑似重复、没有 EPUB、水印标签。点进任一问题，直接带着选择去处理。</p>
+          </div>
+          <div class="gauge-wrap" aria-hidden="true">
+            <div class="gauge"><span>60<small>分</small></span></div>
+            <div class="issue-stack">
+              <span class="issue issue--high">230<span>缺简介</span></span>
+              <span class="issue">278<span>缺标签</span></span>
+              <span class="issue issue--low">80<span>疑似重复</span></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-convert"/></svg></span>
+          <h3>批量转换</h3>
+          <p>把 calibre 的 ebook-convert 做成队列：选书、选目标格式、入队即可。并发 1–4 本，进度实时更新，队列落盘，重启后还在。</p>
+          <ul class="chips">
+            <li class="chip">EPUB / AZW3 / MOBI</li>
+            <li class="chip">并发 1–4</li>
+          </ul>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-device"/></svg></span>
+          <h3>推送 Kindle</h3>
+          <p>插上设备，识别盘符后直接推送，只复制 EPUB 到 <code>documents/eebookk/</code>；也可以走 SMTP 邮件推送，QQ、163、Gmail、Outlook 都有预设。</p>
+          <ul class="chips">
+            <li class="chip">USB 直推</li>
+            <li class="chip">邮件推送</li>
+          </ul>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-reader"/></svg></span>
+          <h3>内置阅读器</h3>
+          <p>EPUB 直接在应用里打开，不跳出去。目录、上一章 / 下一章、字号 15–30、浅色 / 米黄 / 深色三档，读到哪记到哪。</p>
+          <ul class="chips">
+            <li class="chip">流式 EPUB</li>
+            <li class="chip">进度记忆</li>
+          </ul>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-editor"/></svg></span>
+          <h3>电子书编辑器</h3>
+          <p>像 calibre 的 Edit book：按类型列出 OPF、NCX、正文、样式、图片。改完重建整个 zip，保证 mimetype 规范；保存前自动备份，保留最近 5 版。</p>
+          <ul class="chips">
+            <li class="chip">查找替换</li>
+            <li class="chip">实时预览</li>
+            <li class="chip">还原上一版</li>
+          </ul>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-metadata"/></svg></span>
+          <h3>元数据与全网查书</h3>
+          <p>书名、作者、系列、出版社、日期、语言、评分、标签、标识符、自定义列都能改。豆瓣、微信读书、NeoDB 三源一次查，封面标注真实像素。</p>
+          <ul class="chips">
+            <li class="chip">三源查书</li>
+            <li class="chip">自定义列</li>
+            <li class="chip">标识符整组替换</li>
+          </ul>
+        </article>
+
+        <article class="bcard reveal">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-cover"/></svg></span>
+          <h3>封面编辑器</h3>
+          <p>选图后拖拽定位、滚轮缩放 100–400%，支持旋转与水平翻转，输出固定 2:3 的 900 / 1200 / 1600 三档。全网找封面按像素面积从大到小排列。</p>
+          <ul class="chips">
+            <li class="chip">2:3 三档</li>
+            <li class="chip">旋转 / 翻转</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tour" id="tour">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">产品导览</p>
+        <h2>每个页面，<br>都按真实书库做满了。</h2>
+        <p>下面的截图来自一台装了 300 多本书的机器，不是设计稿。点左侧切换页面。</p>
+      </div>
+
+      <div class="tour-layout" data-tour>
+        <div class="tour-rail" role="tablist" aria-label="功能页面" aria-orientation="vertical">
+          <button class="tour-tab is-active" type="button" role="tab" id="tab-library" aria-selected="true" aria-controls="panel-library" tabindex="0">
+            <span class="tour-idx">01</span><span class="tour-label">书库</span><span class="tour-sub">封面墙 / 表格 / 多选</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-workbench" aria-selected="false" aria-controls="panel-workbench" tabindex="-1">
+            <span class="tour-idx">02</span><span class="tour-label">整理台</span><span class="tour-sub">健康度与批量编辑</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-convert" aria-selected="false" aria-controls="panel-convert" tabindex="-1">
+            <span class="tour-idx">03</span><span class="tour-label">转换</span><span class="tour-sub">队列、并发、落盘</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-device" aria-selected="false" aria-controls="panel-device" tabindex="-1">
+            <span class="tour-idx">04</span><span class="tour-label">设备</span><span class="tour-sub">USB / 邮件推送</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-reader" aria-selected="false" aria-controls="panel-reader" tabindex="-1">
+            <span class="tour-idx">05</span><span class="tour-label">阅读器</span><span class="tour-sub">目录、字号、进度</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-editor" aria-selected="false" aria-controls="panel-editor" tabindex="-1">
+            <span class="tour-idx">06</span><span class="tour-label">电子书编辑器</span><span class="tour-sub">改 EPUB 里的文件</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-metadata" aria-selected="false" aria-controls="panel-metadata" tabindex="-1">
+            <span class="tour-idx">07</span><span class="tour-label">元数据</span><span class="tour-sub">三源查书与字段编辑</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-tags" aria-selected="false" aria-controls="panel-tags" tabindex="-1">
+            <span class="tour-idx">08</span><span class="tour-label">分组与标签</span><span class="tour-sub">药丸流与批量整理</span>
+          </button>
+          <button class="tour-tab" type="button" role="tab" id="tab-authors" aria-selected="false" aria-controls="panel-authors" tabindex="-1">
+            <span class="tour-idx">09</span><span class="tour-label">作者</span><span class="tour-sub">A–Z 索引与批量合并</span>
+          </button>
+        </div>
+
+        <div class="tour-stage">
+          <div class="tour-panel is-active" role="tabpanel" id="panel-library" aria-labelledby="tab-library" tabindex="0">
+            <figure class="shot-frame">
+              <img src="assets/shots/library.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 书库页：封面墙、筛选标签与排序">
+            </figure>
+            <div class="tour-copy">
+              <h3>书库：封面墙和表格，一眼找到那本书</h3>
+              <p>封面墙、紧凑表格与筛选条共用一套数据。选中一批书以后，转换、推送、书单、删除都在底部操作条里，不用来回切换页面。</p>
+              <ul class="ticks">
+                <li>按书名 / 作者 / 时间 / 大小 / 评分排序</li>
+                <li>缺简介、缺标签、缺封面、无 EPUB 一键筛选</li>
+                <li>Ctrl 点击或复选框多选，批量操作</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-workbench" aria-labelledby="tab-workbench" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/workbench.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 整理台：书库健康度、问题清单与批量编辑">
+            </figure>
+            <div class="tour-copy">
+              <h3>整理台：先知道书库缺什么，再一次补齐</h3>
+              <p>扫描一遍给出健康度和问题清单。点「去处理」会带着这批书跳到对应页面；下面的批量编辑可以一次改系列、出版社、出版日期、语言和评分，也可以给标签加一组、删一组。</p>
+              <ul class="ticks">
+                <li>健康度评分 + 六类问题清单</li>
+                <li>网络自动补全简介、标签与封面</li>
+                <li>标签批量加删、水印标签清理</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-convert" aria-labelledby="tab-convert" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/convert.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 转换页：转换队列与从书库选择">
+            </figure>
+            <div class="tour-copy">
+              <h3>转换：把命令行藏进队列里</h3>
+              <p>右侧勾选书、选目标格式入队，左侧实时显示进度。默认只列出还没有 EPUB 的书，避免自己转自己；并发数、输出目录和附加参数都在设置里改。</p>
+              <ul class="ticks">
+                <li>并发 1–4 本，进度实时刷新</li>
+                <li>队列存盘，重启后历史还在</li>
+                <li>完成后直接打开输出文件夹</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-device" aria-labelledby="tab-device" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/device.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 设备页：Kindle USB 推送与邮件推送设置">
+            </figure>
+            <div class="tour-copy">
+              <h3>设备：USB 和邮件，两种推送方式</h3>
+              <p>USB 方式只复制 EPUB，落在 <code>documents/eebookk/</code>；邮件方式走你的 SMTP 账号，快捷预设覆盖 QQ、163、Gmail、Outlook。单封上限会提前拦住超限文件，不会截断。</p>
+              <ul class="ticks">
+                <li>PnP 探测设备与型号插图</li>
+                <li>SMTP 授权码用系统安全存储加密</li>
+                <li>兼容 Kindle 的 EPUB / DOCX 限制</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-reader" aria-labelledby="tab-reader" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/reader.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 内置阅读器：章节目录、正文与字号调节">
+            </figure>
+            <div class="tour-copy">
+              <h3>阅读器：读到哪，下次从哪继续</h3>
+              <p>流式渲染 EPUB，左侧目录直接跳章。字号 15–30、浅色 / 米黄 / 深色三档，进度实时写进本地，底栏常驻显示最近在读。</p>
+              <ul class="ticks">
+                <li>目录、上一章 / 下一章</li>
+                <li>字号与三档阅读配色</li>
+                <li>阅读进度自动保存</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-editor" aria-labelledby="tab-editor" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/editor.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 电子书编辑器：文件列表、代码编辑区与实时预览">
+            </figure>
+            <div class="tour-copy">
+              <h3>电子书编辑器：直接改 EPUB 里的文件</h3>
+              <p>左侧按书脊、正文、样式、图片、字体分组列出文件，中间编辑，右侧实时预览。保存时重建 zip，mimetype 仍是第一个条目且不压缩，写完重新读回比对。</p>
+              <ul class="ticks">
+                <li>查找 / 替换，命中数实时显示</li>
+                <li>保存前备份，可还原上一版</li>
+                <li>超过 2MB 的文件不载入，避免卡死</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-metadata" aria-labelledby="tab-metadata" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/metadata-edit.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 元数据编辑：书名、作者、系列、出版社等字段">
+            </figure>
+            <div class="tour-copy">
+              <h3>元数据：三源查书，确认后再写库</h3>
+              <p>一次查豆瓣、微信读书、NeoDB，结果按来源列出。点一条只填入表单，不会立刻写库；确认无误再保存。标识符整组替换，自定义列按类型提交。</p>
+              <ul class="ticks">
+                <li>封面标注真实像素尺寸</li>
+                <li>标识符、自定义列完整支持</li>
+                <li>保存时可同时嵌入书籍文件</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-tags" aria-labelledby="tab-tags" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/tags.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 分组与标签页：按使用频次分组的标签药丸">
+            </figure>
+            <div class="tour-copy">
+              <h3>分组与标签：按使用频次排，不用翻长列表</h3>
+              <p>标签按常用、一般、只用过一次分组，每枚药丸右侧是使用次数。多选后可以批量改名、合并、删除，水印标签一键清理。</p>
+              <ul class="ticks">
+                <li>按使用频次自动分组</li>
+                <li>批量改名 / 合并 / 删除</li>
+                <li>只看水印标签</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tour-panel" role="tabpanel" id="panel-authors" aria-labelledby="tab-authors" tabindex="0" hidden>
+            <figure class="shot-frame">
+              <img src="assets/shots/authors.webp" width="1920" height="1080" loading="lazy" decoding="async"
+                   alt="eebookk 作者页：A–Z 索引与作者卡片">
+            </figure>
+            <div class="tour-copy">
+              <h3>作者：A–Z 索引，300 本书也不难找人</h3>
+              <p>顶部字母表直接跳到对应分组，卡片显示作者名与藏书数。支持多选后批量改名、合并、删除，外文作者会剥掉国籍前缀再归类。</p>
+              <ul class="ticks">
+                <li>字母表常驻顶部，点击跳转</li>
+                <li>号码与西文首字母单独归类</li>
+                <li>批量改名、合并、删除</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section more" id="more">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">还有这些</p>
+        <h2>不占一个页面，<br>但每次都会用到。</h2>
+      </div>
+      <div class="more-grid">
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg>
+          <h3>标签与作者</h3>
+          <p>药丸流、按使用频次分组，多选后可批量改名、合并、删除。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg>
+          <h3>收藏与书单</h3>
+          <p>只存在 eebookk 本地（<code>collections.json</code>），不写进 calibre，也不会动你的标签。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg>
+          <h3>OPDS 书源</h3>
+          <p>内置 Gutenberg、Standard Ebooks、Feedbooks，也可以添加任意 OPDS 地址，启用或停用。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg>
+          <h3>全局快捷键</h3>
+          <p><code>Ctrl+K</code> 搜索，页面直达键可自定义；快捷键在设置里集中管理。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg>
+          <h3>主题与主色</h3>
+          <p>浅色 / 深色 / 跟随系统，主色、封面圆角、网格密度都能按习惯调。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <h3>自动备份</h3>
+          <p>写库前备份 <code>metadata.db</code>；删除先进回收站；EPUB 编辑器保留最近 5 版。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg>
+          <h3>任务浮层</h3>
+          <p>顶栏「任务」按钮直接看转换进度，运行中的任务有状态点，不用切页面。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+          <h3>更新检查</h3>
+          <p>启动时读取版本清单 JSON，也可以填自建地址；有新版本时在设置里提示。</p>
+        </article>
+        <article class="more-item reveal">
+          <svg class="icon" aria-hidden="true"><use href="#i-convert"/></svg>
+          <h3>转换配置</h3>
+          <p>输出配置文件、添加去重、导出模板，都接进了 calibredb 与 ebook-convert。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section philosophy">
+    <div class="container">
+      <div class="section-head section-head--dark">
+        <p class="eyebrow">和 calibre 的关系</p>
+        <h2>书库是你的。<br>eebookk 只是一个更好用的入口。</h2>
+        <p>不碰 calibre 的源码，不改目录结构，也不导入自己的数据库。你随时可以不用它。</p>
+      </div>
+      <div class="principles">
+        <article class="principle reveal">
+          <span class="principle-idx">01</span>
+          <h3>只读打开 metadata.db</h3>
+          <p>SQLite 直读，306 本书大约 1 ms。calibre 开着也能读，不需要启动任何进程。</p>
+        </article>
+        <article class="principle reveal">
+          <span class="principle-idx">02</span>
+          <h3>写入全部走 calibredb</h3>
+          <p>不直接写数据库，每次修改的结果都和 calibre 自己动手一致。</p>
+        </article>
+        <article class="principle reveal">
+          <span class="principle-idx">03</span>
+          <h3>calibre 运行时自动上锁</h3>
+          <p>每 4 秒探测进程，检测到就禁用所有写入按钮，顶部常驻「编辑已锁定」。</p>
+        </article>
+        <article class="principle reveal">
+          <span class="principle-idx">04</span>
+          <h3>写之前先备份</h3>
+          <p>写库前存一份 metadata.db；删除前把书移到回收站；编辑器保存前留 5 个版本。</p>
+        </article>
+      </div>
+      <p class="philosophy-note">calibre 是 GPLv3 的独立程序，不随本应用分发。eebookk 以 MIT 许可开源。</p>
+    </div>
+  </section>
+
+  <section class="section download" id="download">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">下载</p>
+        <h2>装好就能用。<br>它只读你的书架。</h2>
+        <p>一个安装包，Windows 10 / 11 x64。第一次启动会自己找 calibre 书库，找不到再让你指定。</p>
+      </div>
+
+      <div class="download-card">
+        <div class="download-main">
+          <p class="dl-kicker"><span class="pulse" aria-hidden="true"></span>最新版本 · 2026-10-26</p>
+          <h3 class="dl-version">eebookk <span>0.1.22</span></h3>
+          <p class="dl-sub">Windows 10 / 11 · x64 · NSIS 安装包</p>
+
+          <dl class="dl-meta">
+            <div><dt>安装包</dt><dd>eebookk-0.1.22-setup.exe</dd></div>
+            <div><dt>大小</dt><dd>122 MB</dd></div>
+            <div><dt>引擎</dt><dd>Electron 45 · React 19</dd></div>
+            <div><dt>许可</dt><dd>MIT</dd></div>
+          </dl>
+
+          <div class="download-actions">
+            <a class="btn btn-primary btn-lg" href="https://github.com/Wusshilan/eebookk/releases/download/v0.1.22/eebookk-0.1.22-setup.exe"
+               data-download data-local="download/eebookk-0.1.22-setup.exe"
+               target="_blank" rel="noopener noreferrer">
+              <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+              下载 Windows 安装包
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/Wusshilan/eebookk/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>
+          </div>
+          <p class="dl-note">下载失败时，可以到 <a href="https://github.com/Wusshilan/eebookk/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a> 手动选版本。安装包未做代码签名，SmartScreen 提示时选「更多信息 → 仍要运行」；校验值见发布页。</p>
+        </div>
+
+        <ol class="steps">
+          <li>
+            <span class="step-idx">01</span>
+            <div><h4>先装 calibre</h4><p>eebookk 复用 calibre 的书库与转换器，本机测试版本 9.15.0。</p></div>
+          </li>
+          <li>
+            <span class="step-idx">02</span>
+            <div><h4>下载并安装</h4><p>双击安装包，可以改安装目录，桌面与开始菜单会自动建快捷方式。</p></div>
+          </li>
+          <li>
+            <span class="step-idx">03</span>
+            <div><h4>指向书库</h4><p>首次启动自动查找 calibre 书库；找不到时，选择 <code>metadata.db</code> 所在目录。</p></div>
+          </li>
+        </ol>
+      </div>
+
+      <div class="requirements">
+        <div>
+          <h3>系统要求</h3>
+          <p>Windows 10 / 11 x64，已安装 calibre。除书源、全网查书和更新检查外，其余功能不需要联网。</p>
+        </div>
+        <div>
+          <h3>从源码构建</h3>
+          <p><code>npm install</code> → <code>npm run dev</code>；出安装包用 <code>npm run dist:win</code>。仓库里有完整的 README。</p>
+        </div>
+        <div>
+          <h3>数据位置</h3>
+          <p>设置、收藏、阅读进度、转换队列与备份都在 <code>%APPDATA%\eebookk\</code>，不写进 calibre 书库。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section faq" id="faq">
+    <div class="container faq-layout">
+      <div class="section-head section-head--sticky">
+        <p class="eyebrow">常见问题</p>
+        <h2>下载前，<br>先确认这几件事。</h2>
+        <p>更多细节在 <a href="https://github.com/Wusshilan/eebookk" target="_blank" rel="noopener noreferrer">GitHub 仓库的 README</a> 里。</p>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>需要先安装 calibre 吗？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>需要。eebookk 读的是 calibre 的 <code>metadata.db</code>，写操作调用 <code>calibredb</code>，转换调用 <code>ebook-convert</code>。它不内置书库，也不分发 calibre。</p></div>
+        </details>
+        <details>
+          <summary>会改坏我的书库吗？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>写操作全部通过 calibre 自己的命令行工具完成；写库前自动备份 <code>metadata.db</code>；删除前把书复制到回收站；EPUB 编辑器每次保存前留一份备份。calibre 运行时，所有写入按钮会被禁用。</p></div>
+        </details>
+        <details>
+          <summary>支持 macOS 或 Linux 吗？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>目前只发布 Windows x64 安装包。项目基于 Electron + React + TypeScript，源码公开，其他平台可以自行构建，但还没有验证过。</p></div>
+        </details>
+        <details>
+          <summary>我的书和阅读数据会上传吗？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>不会。书籍、元数据和阅读进度都在本机。只有你主动使用 OPDS 书源、全网查书或检查更新时，应用才会访问对应的网络地址。</p></div>
+        </details>
+        <details>
+          <summary>为什么安装时 Windows 会提示风险？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>安装包没有代码签名，SmartScreen 会拦一下。点「更多信息 → 仍要运行」即可，校验值可以在 GitHub Releases 页面查看。</p></div>
+        </details>
+        <details>
+          <summary>内置阅读器支持哪些格式？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>EPUB，按流式渲染。PDF 和 AZW3 会提示用系统阅读器打开；需要 EPUB 时，可以直接在转换页入队。</p></div>
+        </details>
+        <details>
+          <summary>收藏和书单会写进 calibre 吗？<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="faq-body"><p>不会。收藏和书单保存在 <code>%APPDATA%\eebookk\collections.json</code>，calibre 里看不到，换机器也不会带走。</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a class="brand brand--footer" href="#top" aria-label="回到顶部">
+        <img class="brand-logo" src="assets/logo.svg" width="48" height="48" alt="">
+        <span class="brand-name">eebookk</span>
+      </a>
+      <p>本地优先的书库工作台。<br>给 calibre 换一个壳，书库还是你的。</p>
+      <div class="footer-social">
+        <a href="https://github.com/Wusshilan/eebookk" target="_blank" rel="noopener noreferrer" aria-label="GitHub 仓库">
+          <svg class="icon icon--github" aria-hidden="true"><use href="#i-github"/></svg>
+        </a>
+      </div>
+    </div>
+    <nav class="footer-col" aria-label="产品链接">
+      <h3>产品</h3>
+      <a href="#features">功能</a>
+      <a href="#tour">界面</a>
+      <a href="#download">下载</a>
+      <a href="https://github.com/Wusshilan/eebookk/releases" target="_blank" rel="noopener noreferrer">更新日志</a>
+    </nav>
+    <nav class="footer-col" aria-label="项目链接">
+      <h3>项目</h3>
+      <a href="https://github.com/Wusshilan/eebookk" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+      <a href="https://github.com/Wusshilan/eebookk/issues" target="_blank" rel="noopener noreferrer">问题反馈</a>
+      <a href="https://github.com/Wusshilan/eebookk/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+      <a href="https://opensource.org/license/mit" target="_blank" rel="noopener noreferrer">MIT 许可</a>
+    </nav>
+    <div class="footer-col">
+      <h3>关于</h3>
+      <span>版本 0.1.22</span>
+      <span>由「就一直」维护</span>
+      <span>Powered by calibre</span>
+      <span>非 calibre 官方项目</span>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© 2026 eebookk · MIT License</p>
+    <p>calibre 是 GPLv3 的独立程序，不随本应用分发。</p>
+  </div>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>

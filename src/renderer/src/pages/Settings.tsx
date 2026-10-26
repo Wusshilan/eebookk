@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type {
   AppSettings, BookSource, ShortcutSettings, TrashEntry, UpdateInfo
 } from '../../../shared/types'
@@ -291,6 +291,15 @@ export default function Settings(): React.ReactElement {
     if (res.ok && res.path) patch('convert', { outputDir: res.path })
   }
 
+  /** 换书库：选一个含 metadata.db 的目录，主进程会重新打开并重读书库 */
+  const pickLibrary = async (): Promise<void> => {
+    const res = await invoke<{ ok: boolean; path?: string }>(CH.pickDirectory)
+    if (!res.ok || !res.path) return
+    await invoke(CH.settingsSet, { libraryPath: res.path })
+    await reload()
+    toast('书库已切换')
+  }
+
   if (!draft) {
     return (
       <div className="page">
@@ -481,9 +490,14 @@ export default function Settings(): React.ReactElement {
           <section className="set-section">
             <h2 className="set-h2">书库</h2>
             <Row label="路径">
-              <span className="set-path" title={payload.path}>
-                {payload.path || '没找到书库'}
-              </span>
+              <div className="set-inline">
+                <span className="set-path" title={payload.path}>
+                  {payload.path || '没找到书库'}
+                </span>
+                <button className="btn btn-sm" onClick={() => void pickLibrary()}>
+                  更换
+                </button>
+              </div>
             </Row>
             <Row label="收录">
               <div className="set-stats">
@@ -552,6 +566,9 @@ export default function Settings(): React.ReactElement {
                   {calibreRunning ? '运行中' : '未运行'}
                 </span>
               </div>
+            </Row>
+            <Row label="calibre 引擎">
+              <span className="set-ro">{payload.calibreVersion ?? '未检测到'}</span>
             </Row>
           </section>
         ) : null}

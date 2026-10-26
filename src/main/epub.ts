@@ -18,6 +18,7 @@ import { inflateRawSync } from 'node:zlib'
 import { CH } from '../shared/ipc'
 import type { ReaderInfo, ReaderSpineItem } from '../shared/types'
 import { ctx } from './ctx'
+import { writeFileAtomic } from './file-utils'
 
 /* ============================ ZIP ============================ */
 
@@ -688,8 +689,14 @@ const READER_JS = `
 `
 
 function injectReader(html: string): string {
-  // 统一按 UTF-8 输出，章节里原来的 xml 声明/charset 一律抹掉
-  let out = html.replace(/<\?xml[^>]*\?>/gi, '')
+  // EPUB content is untrusted: remove author scripts and inline handlers before
+  // adding the small reader bridge owned by the application.
+  let out = html
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s+(?:href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi, '')
+    .replace(/<meta\b[^>]*http-equiv\s*=\s*["']?refresh[^>]*>/gi, '')
+    .replace(/<\?xml[^>]*\?>/gi, '')
   out = out.replace(/<meta[^>]+charset\s*=[^>]*>/gi, '<meta charset="utf-8"/>')
   const inject = `<style id="rd-style">${READER_CSS}</style><script id="rd-boot">${READER_JS}</script>`
   if (/<\/head\s*>/i.test(out)) return out.replace(/<\/head\s*>/i, `${inject}</head>`)
@@ -759,7 +766,7 @@ function saveProgress(bookId: number, patch: ProgressPatch): { ok: boolean; frac
     : prev?.sub ?? 0
   store[String(bookId)] = { frac, index, sub, at: Date.now() }
   try {
-    writeFileSync(progressFile(), JSON.stringify(store), 'utf8')
+    writeFileAtomic(progressFile(), JSON.stringify(store))
   } catch {
     /* 写不进就算了，下次打开从头读，不影响当前这一章 */
   }

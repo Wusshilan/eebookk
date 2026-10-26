@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow, ipcMain, nativeTheme, protocol, net, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme, protocol, net, shell } from 'electron'
 import { mkdirSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -7,6 +7,7 @@ import { CH } from '../shared/ipc'
 import { ctx } from './ctx'
 import { SettingsStore } from './settings'
 import { isCalibreRunning, requestCloseCalibre } from './env'
+import { prepareCalibre } from './bootstrap'
 import { registerLibraryActions } from './library-actions'
 import { registerWorkbench } from './workbench'
 import { registerConvert } from './convert'
@@ -60,6 +61,29 @@ if (shotPath) {
 }
 
 let mainWindow: BrowserWindow | null = null
+const singleInstanceLock = app.requestSingleInstanceLock()
+
+if (!singleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow) return
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  })
+}
+
+function externalUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  try {
+    const url = new URL(raw)
+    if (url.protocol === 'https:' || url.protocol === 'http:' || url.protocol === 'mailto:') return url.href
+  } catch {
+    /* Invalid external URLs are ignored at the IPC boundary. */
+  }
+  return null
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -178,9 +202,11 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(async () => {
+if (singleInstanceLock) app.whenReady().then(async () => {
   ctx.settings = new SettingsStore()
   ctx.calibreRunning = await isCalibreRunning()
+  // 内置 calibre 版本会顺手建好空书库，之后 ensureLibrary 才有东西可读
+  await prepareCalibre()
   ctx.ensureLibrary()
   logger.info('应用启动', {
     version: app.getVersion(),
@@ -243,7 +269,10 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle(CH.updateCheck, (_e, force?: boolean) => checkForUpdates(Boolean(force)))
-  ipcMain.handle(CH.openExternal, (_e, url: string) => shell.openExternal(url))
+  ipcMain.handle(CH.openExternal, (_e, url: string) => {
+    const safe = externalUrl(url)
+    return safe ? shell.openExternal(safe) : Promise.resolve('外链地址不合法')
+  })
   ipcMain.handle(CH.logError, (_e, message: string, detail?: string) => {
     logger.error(`[renderer] ${message}`, detail)
   })

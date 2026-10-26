@@ -1,8 +1,9 @@
 ﻿import { app, safeStorage } from 'electron'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { AppSettings, SmtpSettings } from '../shared/types'
 import { detectLibraryPath } from './calibre'
+import { writeFileAtomic } from './file-utils'
 
 const DEFAULTS: AppSettings = {
   libraryPath: null,
@@ -144,12 +145,13 @@ export class SettingsStore {
   }
 
   private persist(): void {
-    mkdirSync(dirname(this.file), { recursive: true })
     const out: StoredFile = { ...this.data }
     if (this.password && safeStorage.isEncryptionAvailable()) {
       out.smtpPasswordEnc = safeStorage.encryptString(this.password).toString('base64')
+    } else {
+      delete out.smtpPasswordEnc
     }
-    writeFileSync(this.file, JSON.stringify(out, null, 2), 'utf8')
+    writeFileAtomic(this.file, JSON.stringify(out, null, 2))
   }
 
   get(): AppSettings {

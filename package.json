@@ -13,7 +13,9 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "dist:win": "electron-vite build && electron-builder --win --config electron-builder.yml"
+    "calibre:vendor": "node scripts/vendor-calibre.mjs",
+    "dist:win": "electron-vite build && electron-builder --win --config electron-builder.yml",
+    "dist:win:fix": "electron-vite build && electron-builder --win --config electron-builder.fix.yml"
   },
   "dependencies": {
     "react": "^19.2.0",

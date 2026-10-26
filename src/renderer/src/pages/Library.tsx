@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Book } from '../../../shared/types'
 import { useApp } from '../app/context'
 import { coverUrl, formatBytes, formatDate } from '../lib/cover'
@@ -234,7 +234,9 @@ export default function LibraryPage(): React.ReactElement {
       ) : null}
 
       {filtered.length === 0 ? (
-        <div className="empty">没有符合条件的书</div>
+        <div className="empty">
+          {stats.total === 0 ? '书库是空的，点「添加书籍」把 EPUB 放进来。' : '没有符合条件的书'}
+        </div>
       ) : view === 'grid' ? (
         <div className="grid grid-dense">
           {filtered.map((b) => (

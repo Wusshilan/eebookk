@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import { CH } from '../shared/ipc'
 import type { Book, ConvertJob, TaskSnapshot } from '../shared/types'
 import { ctx } from './ctx'
 import { calibreExe } from './env'
+import { writeFileAtomic } from './file-utils'
 
 /**
  * 转换后端：把 calibre 的 ebook-convert 当引擎，自己维护队列。
@@ -63,7 +64,7 @@ function storeFile(): string {
 function saveJobs(): void {
   try {
     // 只留最近 200 条，别让文件无限长
-    writeFileSync(storeFile(), JSON.stringify(jobs.slice(-200), null, 2), 'utf8')
+    writeFileAtomic(storeFile(), JSON.stringify(jobs.slice(-200), null, 2))
   } catch {
     /* 写不了就保持内存态，不影响使用 */
   }

@@ -1,0 +1,18 @@
+{
+  "name": "eebookk",
+  "short_name": "eebookk",
+  "description": "calibre 书库的桌面外壳：书库管理、元数据编辑、批量转换、Kindle 推送与内置 EPUB 阅读器。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#f7f6f3",
+  "theme_color": "#07c160",
+  "icons": [
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

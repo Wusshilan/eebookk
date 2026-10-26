@@ -8,3 +8,11 @@ release/
 .DS_Store
 Thumbs.db
 .dsh/
+site/download/
+# 内置 calibre 版本：引擎不进仓库，构建产物只留本地
+vendor/
+fix/win-unpacked/
+fix/*.exe
+fix/*.blockmap
+fix/builder-debug.yml
+fix/latest.yml

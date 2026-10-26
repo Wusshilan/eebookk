@@ -1,0 +1,45 @@
+appId: com.eebookk.desktop
+productName: eebookk
+copyright: Copyright © 2026 就一直
+
+# 内置 calibre 的版本：产物单独落在 fix/，不覆盖常规安装包
+directories:
+  output: fix
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+# 直接用本地安装的 electron（node_modules/electron/dist），
+# 避免打包时再去下载 electron 压缩包——离线环境也能出包
+electronDist: node_modules/electron/dist
+
+asar: true
+
+# calibre 以独立程序的形式随包分发（不做任何修改），运行时用绝对路径调用它的命令行工具
+extraResources:
+  - from: vendor/calibre
+    to: calibre
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: ${productName}-${version}-builtin-calibre-setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: eebookk
+  deleteAppDataOnUninstall: false
+  installerLanguages:
+    - zh_CN
+  language: '2052'
+  differentialPackage: false

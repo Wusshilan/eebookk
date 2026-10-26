@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { Book, LibraryStats, LibraryPayload } from '../shared/types'
 import { readColumnDefs, readCustomValues } from './columns'
+import { calibreVersionLabel } from './env'
 
 export type { Book, LibraryStats, LibraryPayload }
 
@@ -31,24 +32,27 @@ function libraryFromCalibreConfig(): string | null {
   return null
 }
 
+/** calibre 的默认书库位置——和内嵌 calibre 首次建库用同一个路径 */
+export function defaultLibraryPath(): string {
+  return join(homedir(), 'Calibre 书库')
+}
+
 export function detectLibraryPath(): string | null {
   const env = process.env.EEBOOKK_LIBRARY
   if (env && existsSync(join(env, 'metadata.db'))) return env
   const fromConfig = libraryFromCalibreConfig()
   if (fromConfig) return fromConfig
-  const guess = join(homedir(), 'Calibre 书库')
+  const guess = defaultLibraryPath()
   if (existsSync(join(guess, 'metadata.db'))) return guess
   return null
 }
 
+/**
+ * 版本标签由 env.ts 在启动时探测（内置 / 系统 + 版本号），
+ * 这里保持同步签名，方便 payload 直接用。
+ */
 export function detectCalibreVersion(): string | null {
-  for (const base of [
-    process.env.ProgramFiles ? join(process.env.ProgramFiles, 'Calibre2') : '',
-    'C:\\Program Files\\Calibre2'
-  ]) {
-    if (base && existsSync(base)) return 'installed'
-  }
-  return null
+  return calibreVersionLabel()
 }
 
 const BOOK_SQL = `

@@ -1,4 +1,4 @@
-﻿import { execFile, spawn } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, dialog, ipcMain, shell } from 'electron'
@@ -6,7 +6,8 @@ import { promisify } from 'node:util'
 import { CH } from '../shared/ipc'
 import type { TrashEntry } from '../shared/types'
 import { ctx } from './ctx'
-import { calibreExe, isCalibreRunning } from './env'
+import { calibreExe, calibreGuiExe, isCalibreRunning } from './env'
+import { isWithin } from './file-utils'
 
 const run = promisify(execFile)
 
@@ -57,8 +58,12 @@ export function registerLibraryActions(): void {
         if (!book) continue
         try {
           cpSync(join(lib.root, book.relPath), join(trashPath, book.relPath), { recursive: true })
-        } catch {
-          /* 个别书复制失败不阻塞删除，至少把能救的救下来 */
+        } catch (error) {
+          return {
+            ok: false,
+            removed: 0,
+            message: `删除已取消：备份《${book.title}》失败（${error instanceof Error ? error.message : String(error)}）`
+          }
         }
       }
     }
@@ -177,8 +182,8 @@ export function registerLibraryActions(): void {
   /** 打开 calibre 主程序 */
   ipcMain.handle(CH.openCalibre, () => {
     const lib = ctx.ensureLibrary()
-    const exe = calibreExe('calibredb').replace(/calibredb\.exe$/i, 'calibre.exe')
-    if (!existsSync(exe)) return { ok: false, message: '找不到 calibre.exe' }
+    const exe = calibreGuiExe()
+    if (!exe) return { ok: false, message: '找不到 calibre.exe' }
     const args = lib ? ['--with-library', lib.root] : []
     spawn(exe, args, { detached: true, stdio: 'ignore' }).unref()
     return { ok: true, message: '正在启动 calibre' }
@@ -235,7 +240,8 @@ export function registerLibraryActions(): void {
   })
 
   ipcMain.handle(CH.trashRestore, async (_e, paths: string[]) => {
-    const list = (paths ?? []).filter((p) => p && existsSync(p))
+    const root = trashRoot()
+    const list = (paths ?? []).filter((p) => typeof p === 'string' && isWithin(root, p) && existsSync(p))
     if (!list.length) return { ok: false, message: '没有可还原的书' }
     if (await isCalibreRunning()) {
       return { ok: false, message: 'calibre 正在运行，先关掉它再还原' }
@@ -261,6 +267,9 @@ export function registerLibraryActions(): void {
   ipcMain.handle(CH.trashClear, (_e, stamp?: string) => {
     const root = trashRoot()
     const target = stamp ? join(root, stamp) : root
+    if (!isWithin(root, target) || (stamp && !/^[\w-]+$/.test(stamp))) {
+      return { ok: false, message: '回收站路径不合法' }
+    }
     if (!existsSync(target)) return { ok: false, message: '回收站是空的' }
     try {
       rmSync(target, { recursive: true, force: true })
