@@ -227,6 +227,17 @@ export interface DeviceSettings {
   maxAttachmentMB: number
 }
 
+export interface ShortcutSettings {
+  search: string
+  home: string
+  library: string
+  workbench: string
+  convert: string
+  device: string
+  settings: string
+  theme: string
+}
+
 export interface AppSettings {
   libraryPath: string | null
   smtp: SmtpSettings
@@ -240,6 +251,8 @@ export interface AppSettings {
   sources: BookSource[]
   /** 全网元数据 / 封面检索 */
   web: WebMetaSettings
+  /** 全局快捷键 */
+  shortcuts: ShortcutSettings
 }
 
 /* ---------------- 收藏 / 书单 ---------------- */

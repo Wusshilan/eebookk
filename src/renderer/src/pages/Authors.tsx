@@ -163,21 +163,23 @@ const CSS = `
 }
 .tx-au-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
 }
 .tx-au-card {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  height: 58px;
+  padding: 0 10px 0 8px;
   border: 1px solid var(--hairline-soft);
-  border-radius: 10px;
-  background: #fff;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
 }
 .tx-au-card:hover {
-  border-color: #d8e9e0;
+  border-color: var(--accent);
+  background: var(--accent-weak);
   box-shadow: var(--shadow-1);
 }
 .tx-au-main {
@@ -195,7 +197,7 @@ const CSS = `
   border-radius: 3px;
   object-fit: cover;
   display: block;
-  background: #f0f0f0;
+  background: var(--surface-2);
 }
 .tx-au-noimg {
   display: grid;
@@ -228,7 +230,7 @@ const CSS = `
   border-radius: 7px;
   font-size: 12px;
   color: var(--t3);
-  background: #f4f4f4;
+  background: var(--pill-grey);
   opacity: 0;
   transition: opacity 0.14s ease, background-color 0.14s ease;
 }
@@ -529,11 +531,6 @@ export default function Authors(): React.ReactElement {
         </div>
       )}
 
-      <div className="tx-au-foot">
-        <span className="page-sub">
-          点作者进书库看他的书；悬停卡片右侧的「改名」可以批量改写作者名。
-        </span>
-      </div>
     </div>
   )
 }

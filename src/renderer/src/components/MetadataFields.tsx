@@ -136,7 +136,7 @@ export const METADATA_CSS = `
   cursor: pointer;
   color: var(--t1);
 }
-.me-book-row:hover { background: #fff; }
+.me-book-row:hover { background: var(--surface); }
 .me-book-row.is-on { background: var(--accent-weak); }
 .me-book-title {
   flex: 1;
@@ -164,7 +164,7 @@ export const METADATA_CSS = `
 .me-chip {
   cursor: pointer;
   border: 1px solid var(--hairline);
-  background: #fff;
+  background: var(--surface);
 }
 .me-chip:hover { border-color: var(--accent); color: var(--accent-press); }
 .me-batch-grid {

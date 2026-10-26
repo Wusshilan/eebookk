@@ -3266,3 +3266,80 @@ html[data-theme='dark'] .warn-box {
   width: 20px;
   height: 20px;
 }
+
+
+/* ================= 标签分组 ================= */
+
+.tx-group + .tx-group {
+  margin-top: 26px;
+}
+
+.tx-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--t3);
+  margin: 0 0 12px;
+}
+
+.tx-group-num {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t2);
+  background: var(--pill-grey);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= 快捷键设置 ================= */
+
+.sc-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  width: 100%;
+}
+
+.sc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 34px;
+}
+
+.sc-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--t2);
+}
+
+.sc-key {
+  min-width: 108px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  font-size: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--t1);
+}
+
+.sc-key:hover {
+  border-color: var(--accent);
+}
+
+.sc-key.is-rec {
+  border-color: var(--accent);
+  color: var(--accent-press);
+  background: var(--accent-weak);
+}
+
+@media (max-width: 1120px) {
+  .sc-list {
+    grid-template-columns: 1fr;
+  }
+}

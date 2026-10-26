@@ -76,7 +76,7 @@ const CSS = `
   aspect-ratio: 145 / 194;
   object-fit: cover;
   display: block;
-  background: #f0f0f0;
+  background: var(--surface-2);
 }
 .cl-pick-title {
   display: block;
@@ -138,7 +138,7 @@ const CSS = `
 .cl-join-item {
   cursor: pointer;
   border: 1px solid var(--hairline);
-  background: #fff;
+  background: var(--surface);
   corner-shape: squircle;
 }
 .cl-join-item:hover:not(:disabled) {
@@ -750,11 +750,10 @@ export default function Collections({
           ) : ids.length === 0 ? (
             mode === 'favorites' ? (
               <>
-                还没有收藏任何书
+                还没有收藏
                 <br />
                 <span style={{ fontSize: 13 }}>
-                  收藏只存在 eebookk 本地（不会写入 calibre）。点下面的按钮从书库里挑几本。
-                </span>
+                        </span>
                 <div className="cl-empty-actions">
                   <button className="btn btn-primary" onClick={() => setPicking(true)}>
                     挑选收藏

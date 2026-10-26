@@ -511,7 +511,7 @@ const RD_CSS = `
 .rd-fs{font-size:12px;color:var(--rd-sub);width:20px;text-align:center;font-variant-numeric:tabular-nums}
 .rd-themes{display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:999px;background:var(--rd-hover);flex:none;margin-left:6px}
 .rd-dot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.14)}
-.rd-dot[data-t='light']{background:#fff}
+.rd-dot[data-t='light']{background: var(--surface)}
 .rd-dot[data-t='paper']{background:#f2e8d2}
 .rd-dot[data-t='dark']{background:#1d1d1d;border-color:rgba(255,255,255,.2)}
 .rd-dot.is-on{box-shadow:0 0 0 2px var(--accent);border-color:transparent}

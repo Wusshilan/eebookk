@@ -30,6 +30,16 @@ const DEFAULTS: AppSettings = {
   metadata: { authorSeparator: ' & ', tagSeparator: ',', embedOnSave: false },
   device: { usbSubdir: 'eebookk', maxAttachmentMB: 25 },
   web: { sources: ['douban', 'weread'], minCoverWidth: 200 },
+  shortcuts: {
+    search: 'Ctrl+K',
+    home: 'Ctrl+1',
+    library: 'Ctrl+2',
+    workbench: 'Ctrl+3',
+    convert: 'Ctrl+4',
+    device: 'Ctrl+5',
+    settings: 'Ctrl+,',
+    theme: 'Ctrl+J'
+  },
   sources: [
     {
       id: 'gutenberg',
@@ -87,6 +97,7 @@ export class SettingsStore {
       metadata: { ...DEFAULTS.metadata },
       device: { ...DEFAULTS.device },
       web: { ...DEFAULTS.web },
+      shortcuts: { ...DEFAULTS.shortcuts },
       // 数组要深拷贝，否则改一处会把 DEFAULTS 本身带脏
       sources: DEFAULTS.sources.map((s) => ({ ...s }))
     }
@@ -106,7 +117,8 @@ export class SettingsStore {
         general: { ...base.general, ...(raw.general ?? {}) },
         metadata: { ...base.metadata, ...(raw.metadata ?? {}) },
         device: { ...base.device, ...(raw.device ?? {}) },
-        web: { ...base.web, ...(raw.web ?? {}) }
+        web: { ...base.web, ...(raw.web ?? {}) },
+        shortcuts: { ...base.shortcuts, ...(raw.shortcuts ?? {}) }
       }
       if (raw.smtpPasswordEnc) {
         try {
@@ -145,6 +157,7 @@ export class SettingsStore {
     if (rest.metadata) this.data.metadata = { ...this.data.metadata, ...rest.metadata }
     if (rest.device) this.data.device = { ...this.data.device, ...rest.device }
     if (rest.web) this.data.web = { ...this.data.web, ...rest.web }
+    if (rest.shortcuts) this.data.shortcuts = { ...this.data.shortcuts, ...rest.shortcuts }
     if (Array.isArray(rest.sources)) {
       // 内置源不能删：patch 里漏掉的按 id 补回来，只允许改 url / searchUrl / enabled
       const kept = rest.sources.filter((s) => s && typeof s.id === 'string')

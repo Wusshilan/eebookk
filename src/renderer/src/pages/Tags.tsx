@@ -54,7 +54,7 @@ const CSS = `
   padding-left: 4px;
   border: 1px solid var(--hairline);
   border-radius: 17px;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.14s ease, background-color 0.14s ease;
 }
 .tx-tag:hover {
@@ -83,7 +83,7 @@ const CSS = `
   color: #c9c9c9;
 }
 .tx-tag-check:hover {
-  background: #f0f0f0;
+  background: var(--surface-2);
   color: #9a9a9a;
 }
 .tx-tag.is-on .tx-tag-check {
@@ -453,16 +453,26 @@ export default function Tags(): React.ReactElement {
         <div className="empty">{loading ? '正在聚合标签…' : '读取失败，点右上角「刷新」重试'}</div>
       ) : summary.tags.length === 0 ? (
         <div className="empty">
-          这个书库里还没有任何标签。
-          <br />
-          去「整理台」或书籍详情页给书补上标签，这里就会长出一片药丸。
+          没有标签
         </div>
       ) : rows.length === 0 ? (
-        <div className="empty">没有匹配的标签，换个关键词或取消筛选试试。</div>
+        <div className="empty">没有匹配的标签</div>
       ) : (
         <>
-          <div className="tx-cloud">
-            {visibleRows.map((row) => {
+          {[
+            { key: 'hot', title: '常用', rows: visibleRows.filter((r) => r.count >= 3) },
+            { key: 'mid', title: '一般', rows: visibleRows.filter((r) => r.count === 2) },
+            { key: 'one', title: '只用过一次', rows: visibleRows.filter((r) => r.count === 1) }
+          ]
+            .filter((g) => g.rows.length > 0)
+            .map((g) => (
+              <section className="tx-group" key={g.key}>
+                <h3 className="tx-group-head">
+                  {g.title}
+                  <span className="tx-group-num">{g.rows.length}</span>
+                </h3>
+                <div className="tx-cloud">
+                  {g.rows.map((row) => {
               const reason = suspiciousTag(row.name)
               const on = picked.includes(row.name)
               return (
@@ -487,21 +497,13 @@ export default function Tags(): React.ReactElement {
                   <span className="tx-tag-count">{row.count}</span>
                 </div>
               )
-            })}
-          </div>
-          {rows.length > visibleRows.length ? (
-            <p className="tx-more">
-              当前有 {rows.length} 个标签，先显示前 {visibleRows.length} 个；用搜索收窄范围。
-            </p>
-          ) : null}
+                  })}
+                </div>
+              </section>
+            ))}
         </>
       )}
 
-      <div className="tx-foot">
-        <span className="page-sub">
-          点标签名进书库看这个标签下的书；点左侧圆圈勾选后可批量重命名 / 合并 / 删除。
-        </span>
-      </div>
     </div>
   )
 }

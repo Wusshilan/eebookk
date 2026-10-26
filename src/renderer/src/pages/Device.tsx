@@ -115,7 +115,7 @@ const CSS = `
   flex: none;
   border-radius: 4px;
   border: 1.5px solid #d2d2d2;
-  background: #fff;
+  background: var(--surface);
   display: grid;
   place-items: center;
   color: #fff;
@@ -128,7 +128,7 @@ const CSS = `
   display: block;
   border-radius: 3px;
   object-fit: cover;
-  background: #f0f0f0;
+  background: var(--surface-2);
 }
 .ds-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .ds-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

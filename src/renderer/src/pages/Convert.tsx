@@ -50,7 +50,7 @@ const CSS = `
   flex: none;
   border-radius: 3px;
   object-fit: cover;
-  background: #f0f0f0;
+  background: var(--surface-2);
 }
 .cv-row-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .cv-row-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

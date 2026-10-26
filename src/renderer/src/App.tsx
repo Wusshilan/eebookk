@@ -1,8 +1,11 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AppSettings, CollectionsStore, LibraryPayload, UpdateInfo } from '../../shared/types'
+import type {
+  AppSettings, CollectionsStore, LibraryPayload, ShortcutSettings, UpdateInfo
+} from '../../shared/types'
 import { CH } from '../../shared/ipc'
 import logo from './assets/logo.svg'
 import { applyAppearance, watchSystemTheme } from './lib/appearance'
+import { matches, isTypingTarget } from './lib/shortcuts'
 import { AppCtx, type AppApi, type Route } from './app/context'
 import {
   IconBack, IconBookmark, IconClose, IconConvert, IconDevice,
@@ -87,6 +90,8 @@ export default function App(): React.ReactElement {
   /** 内置阅读器记录的进度，优先于 calibre 自己的 pos_frac */
   const [readPos, setReadPos] = useState<Record<string, number>>({})
   const [themeOpen, setThemeOpen] = useState(false)
+  const [shortcuts, setShortcuts] = useState<ShortcutSettings | null>(null)
+  const [accent, setAccent] = useState<string>('green')
   const themeBoxRef = useRef<HTMLDivElement>(null)
   /** 跟随系统时，系统换主题要能实时生效 */
   const appearanceRef = useRef<ReturnType<typeof Object> | null>(null)
@@ -225,6 +230,8 @@ export default function App(): React.ReactElement {
       .then((s) => {
         applyAppearance(s?.appearance)
         appearanceRef.current = (s?.appearance ?? null) as never
+        setShortcuts(s?.shortcuts ?? null)
+        setAccent(s?.appearance?.accent ?? 'green')
         if (!s?.general?.restoreLastPage) return
         // 带了 #hash 说明是深链接（截图/外部调用），优先尊重 hash，不恢复上次页面
         if (window.location.hash.replace(/^#/, '').trim()) return
@@ -264,16 +271,7 @@ export default function App(): React.ReactElement {
     if (route.name === 'list' && route.id === id) navigate({ name: 'home' })
   }
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        searchRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+
 
   const navigate = useCallback((r: Route) => {
     // 注意：不要在这里清空 selection。
@@ -289,6 +287,48 @@ export default function App(): React.ReactElement {
   const back = useCallback(() => {
     setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
   }, [])
+
+  useEffect(() => {
+    if (!shortcuts) return
+    const onKey = (e: KeyboardEvent): void => {
+      const typing = isTypingTarget(e.target)
+      // 搜索键在输入框里也要能用（再次聚焦）
+      if (matches(e, shortcuts.search)) {
+        e.preventDefault()
+        searchRef.current?.focus()
+        return
+      }
+      if (typing) return
+      if (matches(e, shortcuts.home)) {
+        e.preventDefault()
+        navigate({ name: 'home' })
+      } else if (matches(e, shortcuts.library)) {
+        e.preventDefault()
+        navigate({ name: 'library' })
+      } else if (matches(e, shortcuts.workbench)) {
+        e.preventDefault()
+        navigate({ name: 'workbench' })
+      } else if (matches(e, shortcuts.convert)) {
+        e.preventDefault()
+        navigate({ name: 'convert' })
+      } else if (matches(e, shortcuts.device)) {
+        e.preventDefault()
+        navigate({ name: 'device' })
+      } else if (matches(e, shortcuts.settings)) {
+        e.preventDefault()
+        navigate({ name: 'settings' })
+      } else if (matches(e, shortcuts.theme)) {
+        e.preventDefault()
+        const cur = (appearanceRef.current as { theme?: string } | null) ?? {}
+        const next = { ...cur, theme: cur.theme === 'dark' ? 'light' : 'dark' }
+        applyAppearance(next as never)
+        appearanceRef.current = next as never
+        void window.api.invoke(CH.settingsSet, { appearance: next }).catch(() => undefined)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [shortcuts, navigate])
 
   useEffect(
     () =>
@@ -338,6 +378,7 @@ export default function App(): React.ReactElement {
     const next = { ...currentAppearance(), accent: k }
     applyAppearance(next as never)
     appearanceRef.current = next as never
+    setAccent(k)
     await window.api.invoke(CH.settingsSet, { appearance: next }).catch(() => undefined)
   }
 
@@ -627,7 +668,7 @@ export default function App(): React.ReactElement {
                           <button
                             key={a.k}
                             type="button"
-                            className="accent-dot"
+                            className={`accent-dot${accent === a.k ? ' is-on' : ''}`}
                             style={{ background: a.c }}
                             aria-label={a.k}
                             onClick={() => void pickAccent(a.k)}

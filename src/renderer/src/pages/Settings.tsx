@@ -1,5 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import type { AppSettings, BookSource, TrashEntry, UpdateInfo } from '../../../shared/types'
+import type {
+  AppSettings, BookSource, ShortcutSettings, TrashEntry, UpdateInfo
+} from '../../../shared/types'
+import { SHORTCUT_LABELS, comboOf } from '../lib/shortcuts'
 import { CH } from '../../../shared/ipc'
 import { useApp } from '../app/context'
 import { applyAppearance } from '../lib/appearance'
@@ -75,6 +78,8 @@ export default function Settings(): React.ReactElement {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [loadError, setLoadError] = useState('')
   const [trash, setTrash] = useState<TrashEntry[]>([])
+  /** 正在录制哪一个快捷键 */
+  const [recording, setRecording] = useState<keyof ShortcutSettings | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -110,6 +115,28 @@ export default function Settings(): React.ReactElement {
   const patch = <K extends keyof AppSettings>(key: K, value: Partial<AppSettings[K]>): void => {
     setDraft((prev) => (prev ? { ...prev, [key]: { ...(prev[key] as object), ...value } } : prev))
   }
+
+  // 录制快捷键：按下的组合直接写进去
+  useEffect(() => {
+    if (!recording || !draft) return
+    const onKey = (e: KeyboardEvent): void => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') {
+        setRecording(null)
+        return
+      }
+      if (['Control', 'Meta', 'Alt', 'Shift'].includes(e.key)) return
+      const combo = comboOf(e)
+      if (!/^(Ctrl|Alt)\b/.test(combo)) return
+      setDraft((prev) =>
+        prev ? { ...prev, shortcuts: { ...prev.shortcuts, [recording]: combo } } : prev
+      )
+      setRecording(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [recording, draft])
 
   const updateSource = (id: string, next: Partial<BookSource>): void => {
     setDraft((prev) =>
@@ -176,6 +203,7 @@ export default function Settings(): React.ReactElement {
         device: draft.device,
         sources: draft.sources,
         web: draft.web,
+        shortcuts: draft.shortcuts,
         smtp: {
           enabled: draft.smtp.enabled,
           host: draft.smtp.host.trim(),
@@ -311,12 +339,22 @@ export default function Settings(): React.ReactElement {
                   label="开启"
                 />
               </Row>
-              <Row label="搜索快捷键">
-                <span className="set-ro">
-                  <kbd className="set-kbd">Ctrl</kbd> + <kbd className="set-kbd">K</kbd>
-                </span>
-              </Row>
-              <Row label="界面语言">
+              <Row label="快捷键">
+              <div className="sc-list">
+                {SHORTCUT_LABELS.map((s) => (
+                  <div className="sc-row" key={s.key}>
+                    <span className="sc-name">{s.label}</span>
+                    <button
+                      className={`sc-key${recording === s.key ? ' is-rec' : ''}`}
+                      onClick={() => setRecording(recording === s.key ? null : s.key)}
+                    >
+                      {recording === s.key ? '按下组合键…' : draft.shortcuts[s.key] || '未设置'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Row>
+            <Row label="界面语言">
                 <span className="set-ro">简体中文</span>
               </Row>
             </section>
