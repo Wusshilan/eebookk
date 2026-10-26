@@ -3185,3 +3185,64 @@ html[data-theme='dark'] .warn-box {
   background: #2e2519;
   color: #e8c58a;
 }
+
+
+/* ================= 顶栏工具按钮 ================= */
+
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  -webkit-app-region: no-drag;
+}
+
+.icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.icon-btn.is-on {
+  background: var(--pill-grey);
+  color: var(--t1);
+}
+
+.icon-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.icon-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 132px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  z-index: 60;
+}
+
+.icon-pop-item {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--t1);
+  text-align: left;
+}
+
+.icon-pop-item:hover {
+  background: var(--pill-grey);
+}

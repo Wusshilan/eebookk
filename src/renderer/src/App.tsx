@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AppSettings, CollectionsStore, LibraryPayload, UpdateInfo } from '../../shared/types'
 import { CH } from '../../shared/ipc'
 import logo from './assets/logo.svg'
@@ -7,7 +7,7 @@ import { AppCtx, type AppApi, type Route } from './app/context'
 import {
   IconBack, IconBookmark, IconClose, IconConvert, IconDevice,
   IconGear, IconGrid, IconHash, IconHome, IconMaximize, IconMinimize,
-  IconMore, IconPlus, IconSearch, IconSliders, IconSort, IconUser
+  IconMore, IconPalette, IconPlus, IconSearch, IconSliders, IconSort, IconTasks, IconUser
 } from './icons'
 import Toast, { useToasts } from './components/Toast'
 import Dialog, { type DialogRequest } from './components/Dialog'
@@ -78,6 +78,8 @@ export default function App(): React.ReactElement {
   const [dialog, setDialog] = useState<DialogRequest | null>(null)
   /** 内置阅读器记录的进度，优先于 calibre 自己的 pos_frac */
   const [readPos, setReadPos] = useState<Record<string, number>>({})
+  const [themeOpen, setThemeOpen] = useState(false)
+  const themeBoxRef = useRef<HTMLDivElement>(null)
   /** 跟随系统时，系统换主题要能实时生效 */
   const appearanceRef = useRef<ReturnType<typeof Object> | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -288,6 +290,31 @@ export default function App(): React.ReactElement {
       }),
     []
   )
+
+  useEffect(() => {
+    if (!themeOpen) return
+    const onDown = (e: MouseEvent): void => {
+      if (themeBoxRef.current && !themeBoxRef.current.contains(e.target as Node)) setThemeOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setThemeOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [themeOpen])
+
+  const pickTheme = async (t: 'light' | 'dark' | 'system'): Promise<void> => {
+    const cur = (appearanceRef.current as Record<string, unknown> | null) ?? {}
+    const next = { ...cur, theme: t }
+    applyAppearance(next as never)
+    appearanceRef.current = next as never
+    setThemeOpen(false)
+    await window.api.invoke(CH.settingsSet, { appearance: next }).catch(() => undefined)
+  }
 
   const stats = payload?.stats
   const issueCount = stats ? stats.total - stats.withDesc : 0
@@ -542,15 +569,56 @@ export default function App(): React.ReactElement {
                   编辑已锁定
                 </span>
               ) : null}
-              <button
-                className="icon-btn"
-                type="button"
-                aria-label="设置"
-                title="设置"
-                onClick={() => navigate({ name: 'settings' })}
-              >
-                <IconGear />
-              </button>
+              <div className="topbar-tools">
+                <div className="icon-wrap" ref={themeBoxRef}>
+                  <button
+                    className={`icon-btn${themeOpen ? ' is-on' : ''}`}
+                    type="button"
+                    aria-label="主题"
+                    title="主题"
+                    onClick={() => setThemeOpen((v) => !v)}
+                  >
+                    <IconPalette />
+                  </button>
+                  {themeOpen ? (
+                    <div className="icon-pop">
+                      {[
+                        { k: 'light', t: '浅色' },
+                        { k: 'dark', t: '深色' },
+                        { k: 'system', t: '跟随系统' }
+                      ].map((item) => (
+                        <button
+                          key={item.k}
+                          type="button"
+                          className="icon-pop-item"
+                          onClick={() => void pickTheme(item.k as 'light')}
+                        >
+                          {item.t}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+                <button
+                  className="icon-btn"
+                  type="button"
+                  aria-label="任务"
+                  title="任务"
+                  onClick={() => navigate({ name: 'convert' })}
+                >
+                  <IconTasks />
+                  {convertRunning > 0 ? <span className="icon-dot" /> : null}
+                </button>
+                <button
+                  className="icon-btn"
+                  type="button"
+                  aria-label="设置"
+                  title="设置"
+                  onClick={() => navigate({ name: 'settings' })}
+                >
+                  <IconGear />
+                </button>
+              </div>
               <div className="wincontrols">
                 <button className="win-btn" type="button" onClick={() => window.api.minimize()} aria-label="最小化">
                   <IconMinimize />
