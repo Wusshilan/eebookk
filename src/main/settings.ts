@@ -16,7 +16,14 @@ const DEFAULTS: AppSettings = {
     from: '',
     kindleEmail: ''
   },
-  convert: { defaultTarget: 'epub', extraArgs: '', concurrency: 2, outputDir: '' },
+  convert: {
+    defaultTarget: 'epub',
+    outputProfile: '',
+    extraArgs: '',
+    concurrency: 2,
+    outputDir: ''
+  },
+  library: { addMerge: 'ignore', exportTemplate: '', trashBeforeDelete: true },
   appearance: {
     theme: 'light',
     accent: 'green',
@@ -26,7 +33,7 @@ const DEFAULTS: AppSettings = {
     sidebarWidth: 306
   },
   update: { endpoint: '', autoCheck: true },
-  general: { closeToTray: false, restoreLastPage: false },
+  general: { restoreLastPage: false },
   metadata: { authorSeparator: ' & ', tagSeparator: ',', embedOnSave: false },
   device: { usbSubdir: 'eebookk', maxAttachmentMB: 25 },
   web: { sources: ['douban', 'weread'], minCoverWidth: 200 },
@@ -91,6 +98,7 @@ export class SettingsStore {
       ...DEFAULTS,
       smtp: { ...DEFAULTS.smtp },
       convert: { ...DEFAULTS.convert },
+      library: { ...DEFAULTS.library },
       appearance: { ...DEFAULTS.appearance },
       update: { ...DEFAULTS.update },
       general: { ...DEFAULTS.general },
@@ -112,6 +120,7 @@ export class SettingsStore {
         ...raw,
         smtp: { ...base.smtp, ...(raw.smtp ?? {}) },
         convert: { ...base.convert, ...(raw.convert ?? {}) },
+        library: { ...base.library, ...(raw.library ?? {}) },
         appearance: { ...base.appearance, ...(raw.appearance ?? {}) },
         update: { ...base.update, ...(raw.update ?? {}) },
         general: { ...base.general, ...(raw.general ?? {}) },
@@ -151,6 +160,7 @@ export class SettingsStore {
     const { smtpPassword, ...rest } = patch
     if (rest.smtp) this.data.smtp = { ...this.data.smtp, ...rest.smtp }
     if (rest.convert) this.data.convert = { ...this.data.convert, ...rest.convert }
+    if (rest.library) this.data.library = { ...this.data.library, ...rest.library }
     if (rest.appearance) this.data.appearance = { ...this.data.appearance, ...rest.appearance }
     if (rest.update) this.data.update = { ...this.data.update, ...rest.update }
     if (rest.general) this.data.general = { ...this.data.general, ...rest.general }

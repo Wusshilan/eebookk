@@ -3343,3 +3343,100 @@ html[data-theme='dark'] .warn-box {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- 顶栏弹层：加大尺寸 ---- */
+
+.icon-pop {
+  min-width: 176px;
+  padding: 8px;
+  gap: 3px;
+}
+
+.icon-pop-item {
+  height: 36px;
+  font-size: 15px;
+}
+
+.icon-pop-accents {
+  gap: 14px;
+  padding: 6px 8px 8px;
+}
+
+.icon-pop-accents .accent-dot {
+  width: 24px;
+  height: 24px;
+}
+
+/* ---- 任务面板 ---- */
+
+.icon-pop-task {
+  width: 320px;
+  min-width: 320px;
+  padding: 10px;
+  gap: 6px;
+}
+
+.task-pop-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t2);
+  padding: 2px 6px 6px;
+}
+
+.task-pop-empty {
+  font-size: 13px;
+  color: var(--t2);
+  padding: 10px 6px 14px;
+}
+
+.task-pop-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.task-pop-item:hover {
+  background: var(--surface-2);
+}
+
+.task-pop-title {
+  font-size: 13px;
+  color: var(--t1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-pop-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--pill-grey);
+  overflow: hidden;
+  display: block;
+}
+
+.task-pop-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.task-pop-pct {
+  font-size: 12px;
+  color: var(--t2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-pop-more {
+  margin-top: 4px;
+  border-top: 1px solid var(--hairline-soft);
+  border-radius: 0 0 8px 8px;
+  color: var(--accent-press);
+  justify-content: flex-start;
+}

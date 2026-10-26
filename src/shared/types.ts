@@ -181,8 +181,6 @@ export interface UpdateSettings {
 }
 
 export interface GeneralSettings {
-  /** 关闭窗口时最小化到托盘而不是退出 */
-  closeToTray: boolean
   /** 启动时恢复上次停留的页面 */
   restoreLastPage: boolean
 }
@@ -202,8 +200,19 @@ export interface AppearanceSettings {
   sidebarWidth: number
 }
 
+export interface LibrarySettings {
+  /** calibredb add 的 --automerge：ignore / overwrite / new_record */
+  addMerge: 'ignore' | 'overwrite' | 'new_record'
+  /** calibredb export 的 --template，留空用 calibre 默认 */
+  exportTemplate: string
+  /** 删除书籍前先备份到回收站 */
+  trashBeforeDelete: boolean
+}
+
 export interface ConvertSettings {
   defaultTarget: string
+  /** ebook-convert 的 --output-profile，留空用 calibre 默认 */
+  outputProfile: string
   extraArgs: string
   /** 同时转换几本，1–4 */
   concurrency: number
@@ -242,6 +251,8 @@ export interface AppSettings {
   libraryPath: string | null
   smtp: SmtpSettings
   convert: ConvertSettings
+  /** 书库操作相关的 calibre 选项 */
+  library: LibrarySettings
   appearance: AppearanceSettings
   update: UpdateSettings
   general: GeneralSettings

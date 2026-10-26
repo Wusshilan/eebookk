@@ -257,7 +257,15 @@ function start(job: ConvertJob): void {
   const output = freshOutputPath(job.title, job.to)
   const child = spawn(
     calibreExe('ebook-convert'),
-    [input, output, '--verbose', ...extraArgs()],
+    [
+      input,
+      output,
+      '--verbose',
+      ...(ctx.settings?.get().convert.outputProfile
+        ? ['--output-profile', ctx.settings.get().convert.outputProfile]
+        : []),
+      ...extraArgs()
+    ],
     { windowsHide: true }
   )
   const rt: JobRuntime = { child, output, buffer: '', stderr: '', settled: false }

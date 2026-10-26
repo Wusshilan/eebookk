@@ -49,7 +49,7 @@ export function registerLibraryActions(): void {
 
     // 先复制一份到回收目录再删：calibredb remove 会直接删文件，误删无法挽回
     let trashPath = ''
-    if (lib) {
+    if (lib && (ctx.settings?.get().library.trashBeforeDelete ?? true)) {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
       trashPath = join(app.getPath('userData'), 'trash', stamp)
       for (const id of ids) {
@@ -90,7 +90,8 @@ export function registerLibraryActions(): void {
       if (pick.canceled || !pick.filePaths.length) return { ok: false, added: 0, message: '已取消' }
       files = pick.filePaths
     }
-    const res = await calibredb(['add', ...files])
+    const merge = ctx.settings?.get().library.addMerge ?? 'ignore'
+    const res = await calibredb(['add', `--automerge=${merge}`, ...files])
     if (!res.ok) return { ok: false, added: 0, message: res.err }
     ctx.reload()
     const ids = res.out.match(/\d+/g)
@@ -143,7 +144,14 @@ export function registerLibraryActions(): void {
       properties: ['openDirectory', 'createDirectory']
     })
     if (pick.canceled || !pick.filePaths.length) return { ok: false, message: '已取消' }
-    const res = await calibredb(['export', ...ids.map(String), '--to-dir', pick.filePaths[0]])
+    const tpl = ctx.settings?.get().library.exportTemplate?.trim()
+    const res = await calibredb([
+      'export',
+      ...ids.map(String),
+      '--to-dir',
+      pick.filePaths[0],
+      ...(tpl ? ['--template', tpl] : [])
+    ])
     return {
       ok: res.ok,
       message: res.ok ? `已导出 ${ids.length} 本到 ${pick.filePaths[0]}` : res.err

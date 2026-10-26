@@ -203,6 +203,7 @@ export default function Settings(): React.ReactElement {
         device: draft.device,
         sources: draft.sources,
         web: draft.web,
+        library: draft.library,
         shortcuts: draft.shortcuts,
         smtp: {
           enabled: draft.smtp.enabled,
@@ -504,6 +505,33 @@ export default function Settings(): React.ReactElement {
                 立即备份
               </button>
             </Row>
+            <Row label="添加去重">
+              <select
+                className="select"
+                value={draft.library.addMerge}
+                onChange={(e) =>
+                  patch('library', { addMerge: e.target.value as 'ignore' | 'overwrite' | 'new_record' })
+                }
+              >
+                <option value="ignore">忽略重复</option>
+                <option value="overwrite">覆盖已有格式</option>
+                <option value="new_record">新建记录</option>
+              </select>
+            </Row>
+            <Row label="导出路径模板">
+              <input
+                className="input"
+                value={draft.library.exportTemplate}
+                onChange={(e) => patch('library', { exportTemplate: e.target.value })}
+              />
+            </Row>
+            <Row label="删除前备份">
+              <Check
+                checked={draft.library.trashBeforeDelete}
+                onChange={(v) => patch('library', { trashBeforeDelete: v })}
+                label="开启"
+              />
+            </Row>
             <Row label="回收站">
               <div className="set-inline">
                 <span className="set-ro">{trash.length} 本</span>
@@ -541,6 +569,20 @@ export default function Settings(): React.ReactElement {
                   {TARGETS.map((t) => (
                     <option key={t} value={t}>{t.toUpperCase()}</option>
                   ))}
+                </select>
+              </Row>
+              <Row label="输出配置文件">
+                <select
+                  className="select"
+                  value={draft.convert.outputProfile}
+                  onChange={(e) => patch('convert', { outputProfile: e.target.value })}
+                >
+                  <option value="">默认</option>
+                  <option value="kindle_pw3">Kindle Paperwhite</option>
+                  <option value="kindle_hidpi">Kindle 高清</option>
+                  <option value="generic_eink">电子墨水</option>
+                  <option value="generic_eink_hd">电子墨水高清</option>
+                  <option value="tablet">平板</option>
                 </select>
               </Row>
               <Row label="同时转换几本">

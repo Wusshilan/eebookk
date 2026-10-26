@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
-  AppSettings, CollectionsStore, LibraryPayload, ShortcutSettings, UpdateInfo
+  AppSettings, CollectionsStore, ConvertJob, LibraryPayload, ShortcutSettings, TaskSnapshot, UpdateInfo
 } from '../../shared/types'
 import { CH } from '../../shared/ipc'
 import logo from './assets/logo.svg'
@@ -90,6 +90,9 @@ export default function App(): React.ReactElement {
   /** 内置阅读器记录的进度，优先于 calibre 自己的 pos_frac */
   const [readPos, setReadPos] = useState<Record<string, number>>({})
   const [themeOpen, setThemeOpen] = useState(false)
+  const [taskOpen, setTaskOpen] = useState(false)
+  const [tasks, setTasks] = useState<ConvertJob[]>([])
+  const taskBoxRef = useRef<HTMLDivElement>(null)
   const [shortcuts, setShortcuts] = useState<ShortcutSettings | null>(null)
   const [accent, setAccent] = useState<string>('green')
   const themeBoxRef = useRef<HTMLDivElement>(null)
@@ -139,10 +142,16 @@ export default function App(): React.ReactElement {
     }
   }, [])
 
-  useEffect(() => window.api.on(CH.evtTasks, (snap) => {
-    const s = snap as { converts?: { status: string }[] }
-    setConvertRunning((s.converts ?? []).filter((j) => j.status === 'running' || j.status === 'queued').length)
-  }), [])
+  useEffect(
+    () =>
+      window.api.on(CH.evtTasks, (snap) => {
+        const s = snap as TaskSnapshot
+        const list = s.converts ?? []
+        setTasks(list)
+        setConvertRunning(list.filter((j) => j.status === 'running' || j.status === 'queued').length)
+      }),
+    []
+  )
 
   // 版本检查：只有真的检测到更高版本，侧栏才会出现「更新」角标
   useEffect(() => {
@@ -340,12 +349,17 @@ export default function App(): React.ReactElement {
   )
 
   useEffect(() => {
-    if (!themeOpen) return
+    if (!themeOpen && !taskOpen) return
     const onDown = (e: MouseEvent): void => {
-      if (themeBoxRef.current && !themeBoxRef.current.contains(e.target as Node)) setThemeOpen(false)
+      const t = e.target as Node
+      if (themeBoxRef.current && !themeBoxRef.current.contains(t)) setThemeOpen(false)
+      if (taskBoxRef.current && !taskBoxRef.current.contains(t)) setTaskOpen(false)
     }
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setThemeOpen(false)
+      if (e.key === 'Escape') {
+        setThemeOpen(false)
+        setTaskOpen(false)
+      }
     }
     window.addEventListener('mousedown', onDown)
     window.addEventListener('keydown', onKey)
@@ -353,7 +367,7 @@ export default function App(): React.ReactElement {
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('keydown', onKey)
     }
-  }, [themeOpen])
+  }, [themeOpen, taskOpen])
 
   /** 顶栏改主题时必须基于最新的外观，否则会把设置页刚改的主题色/圆角覆盖回去 */
   const currentAppearance = (): Record<string, unknown> => {
@@ -678,16 +692,51 @@ export default function App(): React.ReactElement {
                     </div>
                   ) : null}
                 </div>
-                <button
-                  className="icon-btn"
-                  type="button"
-                  aria-label="任务"
-                  title="任务"
-                  onClick={() => navigate({ name: 'convert' })}
-                >
-                  <IconTasks />
-                  {convertRunning > 0 ? <span className="icon-dot" /> : null}
-                </button>
+                <div className="icon-wrap" ref={taskBoxRef}>
+                  <button
+                    className={`icon-btn${taskOpen ? ' is-on' : ''}`}
+                    type="button"
+                    aria-label="任务"
+                    title="任务"
+                    onClick={() => setTaskOpen((v) => !v)}
+                  >
+                    <IconTasks />
+                    {convertRunning > 0 ? <span className="icon-dot" /> : null}
+                  </button>
+                  {taskOpen ? (
+                    <div className="icon-pop icon-pop-task">
+                      <div className="task-pop-head">任务</div>
+                      {tasks.filter((t) => t.status === 'running' || t.status === 'queued').length === 0 ? (
+                        <div className="task-pop-empty">没有进行中的任务</div>
+                      ) : (
+                        tasks
+                          .filter((t) => t.status === 'running' || t.status === 'queued')
+                          .slice(0, 6)
+                          .map((t) => (
+                            <div className="task-pop-item" key={t.id}>
+                              <span className="task-pop-title" title={t.title}>{t.title}</span>
+                              <span className="task-pop-bar">
+                                <i style={{ width: `${Math.max(3, t.percent)}%` }} />
+                              </span>
+                              <span className="task-pop-pct">
+                                {t.status === 'queued' ? '排队' : `${Math.round(t.percent)}%`}
+                              </span>
+                            </div>
+                          ))
+                      )}
+                      <button
+                        type="button"
+                        className="icon-pop-item task-pop-more"
+                        onClick={() => {
+                          setTaskOpen(false)
+                          navigate({ name: 'convert' })
+                        }}
+                      >
+                        转换队列
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
                 <button
                   className="icon-btn"
                   type="button"
