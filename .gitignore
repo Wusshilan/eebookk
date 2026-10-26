@@ -1,0 +1,10 @@
+node_modules/
+out/
+release/
+.shots/
+.tmp/
+*.log
+*.blockmap
+.DS_Store
+Thumbs.db
+.dsh/
