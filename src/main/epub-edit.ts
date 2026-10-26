@@ -74,6 +74,8 @@ interface ParsedZip {
   buffer: Buffer
   entries: ZipEntry[]
   byName: Map<string, ZipEntry>
+  /** OPF manifest 的「小写包内路径 → media-type」；OPF 解析不出来就是空表 */
+  mediaTypes?: Map<string, string>
 }
 
 /** 去掉 . / .. 和多余的分隔符，统一成正斜杠；目录条目的结尾 / 也去掉 */
@@ -482,14 +484,44 @@ const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'a
 const FONT_EXT = new Set(['ttf', 'otf', 'woff', 'woff2', 'eot'])
 const EDITABLE = new Set<EpubFileEntry['kind']>(['html', 'css', 'opf'])
 
-function kindOf(path: string): EpubFileEntry['kind'] {
+/** 按扩展名认类型；认不出返回 null，交给 OPF 的 media-type 判断 */
+function kindFromExt(path: string): EpubFileEntry['kind'] | null {
   const ext = (path.split('.').pop() ?? '').toLowerCase()
   if (ext === 'xhtml' || ext === 'html' || ext === 'htm' || ext === 'xht') return 'html'
   if (ext === 'css') return 'css'
   if (ext === 'opf' || ext === 'ncx') return 'opf'
   if (IMAGE_EXT.has(ext)) return 'image'
   if (FONT_EXT.has(ext)) return 'font'
+  return null
+}
+
+/** OPF manifest 里声明的 media-type → 我们的分类 */
+function kindFromMediaType(mediaType?: string): EpubFileEntry['kind'] {
+  const type = (mediaType ?? '').split(';')[0].trim().toLowerCase()
+  if (!type) return 'other'
+  if (type === 'application/xhtml+xml' || type === 'text/html') return 'html'
+  if (type === 'text/css') return 'css'
+  if (type === 'application/oebps-package+xml' || type === 'application/x-dtbncx+xml') return 'opf'
+  if (type.startsWith('image/')) return 'image'
+  if (
+    type.startsWith('font/') ||
+    type === 'application/vnd.ms-opentype' ||
+    type === 'application/x-font-ttf' ||
+    type === 'application/x-font-otf' ||
+    type === 'application/x-font-woff' ||
+    type.startsWith('application/font-')
+  ) {
+    return 'font'
+  }
   return 'other'
+}
+
+/**
+ * 分类。扩展名优先；扩展名认不出（或者压根没有，比如《翦商》的 EPUB/xhtml/chapter1）
+ * 才看 OPF manifest 里声明的 media-type —— 那才是书的真实类型。
+ */
+function kindOf(path: string, mediaType?: string): EpubFileEntry['kind'] {
+  return kindFromExt(path) ?? kindFromMediaType(mediaType)
 }
 
 function isUtf8Label(label: string): boolean {
@@ -543,6 +575,86 @@ function looksBinary(bytes: Buffer): boolean {
   const head = bytes.subarray(0, Math.min(bytes.length, 4096))
   for (let i = 0; i < head.length; i += 1) if (head[i] === 0) return true
   return false
+}
+
+/* ============================ OPF 的 media-type ============================ */
+
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
+function decodeEntities(s: string): string {
+  const named: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
+  return s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/gi, (whole, body: string) => {
+    const lower = body.toLowerCase()
+    if (lower.startsWith('#x')) {
+      const code = Number.parseInt(lower.slice(2), 16)
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole
+    }
+    if (lower.startsWith('#')) {
+      const code = Number.parseInt(lower.slice(1), 10)
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole
+    }
+    return named[lower] ?? whole
+  })
+}
+
+function attrOf(tag: string, name: string): string {
+  const m = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i').exec(tag)
+  return m ? decodeEntities(m[1] ?? m[2] ?? '') : ''
+}
+
+/** manifest 的 href（可能带 %xx、#fragment）→ 相对包根的路径 */
+function resolveHref(baseDir: string, href: string): string {
+  const clean = safeDecode(String(href).split('#')[0].split('?')[0].trim())
+  if (!clean) return ''
+  return normalizePath(clean.startsWith('/') ? clean : `${baseDir}/${clean}`)
+}
+
+/**
+ * container.xml → OPF → manifest 的 media-type 表。
+ * 这本书的 OPF 要是坏了就返回空表，让调用方退回「只看扩展名」，不抛错。
+ */
+function mediaTypesOf(zip: ParsedZip): Map<string, string> {
+  if (zip.mediaTypes) return zip.mediaTypes
+  const map = new Map<string, string>()
+  zip.mediaTypes = map
+  try {
+    const container = zip.byName.get('META-INF/container.xml')
+    if (!container) return map
+    const containerXml = decodeText(readEntry(zip, container)).text
+    const rootTag = /<rootfile\b([^>]*)>/i.exec(containerXml)?.[1] ?? ''
+    const fullPath = attrOf(rootTag, 'full-path')
+    if (!fullPath) return map
+
+    const opfPath = normalizePath(safeDecode(fullPath))
+    const opfEntry = zip.byName.get(opfPath)
+    if (!opfEntry) return map
+
+    const opfXml = decodeText(readEntry(zip, opfEntry)).text
+    const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/')) : ''
+    for (const item of opfXml.matchAll(/<item\b([^>]*?)\/?>/gi)) {
+      const href = attrOf(item[1], 'href')
+      const type = attrOf(item[1], 'media-type')
+      if (!href || !type) continue
+      const path = resolveHref(opfDir, href)
+      if (!path) continue
+      const key = path.toLowerCase()
+      if (!map.has(key)) map.set(key, type)
+    }
+  } catch {
+    /* OPF 解析不出来就保持原样：只按扩展名分类 */
+  }
+  return map
+}
+
+/** 某个包内路径的 media-type；没有就返回 undefined */
+function mediaTypeOf(zip: ParsedZip, path: string): string | undefined {
+  return mediaTypesOf(zip).get(path.toLowerCase())
 }
 
 /* ============================ 书 / 备份 ============================ */
@@ -615,7 +727,7 @@ function listFiles(bookId: number): EpubFileEntry[] {
   const out: EpubFileEntry[] = []
   for (const entry of zip.entries) {
     if (entry.isDir) continue
-    const kind = kindOf(entry.path)
+    const kind = kindOf(entry.path, mediaTypeOf(zip, entry.path))
     out.push({
       path: entry.path,
       name: entry.path.slice(entry.path.lastIndexOf('/') + 1),
@@ -637,7 +749,7 @@ function readFileContent(bookId: number, rawPath: string): EpubFileContent {
   const entry = zip.byName.get(path)
   if (!entry || entry.isDir) return blank
 
-  const kind = kindOf(path)
+  const kind = kindOf(path, mediaTypeOf(zip, path))
   if (kind === 'image' || kind === 'font') {
     return { path, text: '', status: 'binary', bytes: entry.size }
   }
@@ -686,13 +798,15 @@ async function writeFileContent(
     if (!path) return { ok: false, message: '没有指定要保存的文件' }
     if (String(rawPath).includes('..')) return { ok: false, message: '路径不合法，不能写到包外面去' }
 
-    const kind = kindOf(path)
-    if (!EDITABLE.has(kind)) {
-      return { ok: false, message: '图片、字体和杂项文件不能在编辑器里改' }
-    }
     const bytes = Buffer.from(text, 'utf8')
     if (bytes.length > MAX_TEXT_BYTES) {
       return { ok: false, message: '正文超过 2 MB，编辑器不处理这么大的文件' }
+    }
+
+    // 扩展名就能确定的非文本类型，先快速拒掉，不用去翻整本书
+    const extKind = kindFromExt(path)
+    if (extKind && !EDITABLE.has(extKind)) {
+      return { ok: false, message: '图片、字体和杂项文件不能在编辑器里改' }
     }
 
     const file = bookPath(bookId)
@@ -701,9 +815,18 @@ async function writeFileContent(
     }
 
     const zip = loadBook(bookId).zip
+    // 没有扩展名的章节（xhtml/chapter1）靠 OPF 里的 media-type 认成 html，才能编辑
+    const kind = extKind ?? kindFromMediaType(mediaTypeOf(zip, path))
+    if (!EDITABLE.has(kind)) {
+      return { ok: false, message: '图片、字体和杂项文件不能在编辑器里改' }
+    }
+
     const entry = zip.byName.get(path)
     if (!entry || entry.isDir) {
       return { ok: false, message: 'EPUB 里没有这个文件，刷新一下文件列表再试' }
+    }
+    if (entry.flags & 0x0001) {
+      return { ok: false, message: '这个文件是加密的，改了也读不出来' }
     }
 
     // 原文件编码不是 UTF-8 时，写回变成 UTF-8，声明跟着改
@@ -711,9 +834,10 @@ async function writeFileContent(
     const { encoding } = decodeText(original)
     const finalBytes = isUtf8Label(encoding) ? bytes : Buffer.from(patchCharset(text, kind), 'utf8')
 
-    const backup = makeBackup(file, bookId)
+    // 先在内存里把新包拼好，纯计算失败（太大之类）时别留下没用的备份
     const planned = planZip(zip, new Map([[path, finalBytes]]))
     const out = serializeZip(planned)
+    const backup = makeBackup(file, bookId)
 
     const dir = dirname(file)
     const tmp = join(dir, `.${basename(file)}.${process.pid}.${Date.now()}.tmp`)
