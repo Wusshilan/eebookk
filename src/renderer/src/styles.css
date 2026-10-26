@@ -3730,3 +3730,38 @@ html[data-theme='dark'] .warn-box {
     right: -16px;
   }
 }
+
+/* ---- 拖入文件的遮罩 ---- */
+
+.drop-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 40px;
+  border-radius: 18px;
+  border: 2px dashed var(--accent);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  color: var(--t1);
+}
+
+.drop-card b {
+  font-size: 18px;
+}
+
+.drop-card span {
+  font-size: 13px;
+  color: var(--t2);
+}

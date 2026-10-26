@@ -90,6 +90,7 @@ export default function App(): React.ReactElement {
   /** 内置阅读器记录的进度，优先于 calibre 自己的 pos_frac */
   const [readPos, setReadPos] = useState<Record<string, number>>({})
   const [themeOpen, setThemeOpen] = useState(false)
+  const [dropping, setDropping] = useState(false)
   const [taskOpen, setTaskOpen] = useState(false)
   const [tasks, setTasks] = useState<ConvertJob[]>([])
   const taskBoxRef = useRef<HTMLDivElement>(null)
@@ -107,6 +108,67 @@ export default function App(): React.ReactElement {
     setPayload(p)
     setCalibreRunning(p.calibreRunning)
   }, [])
+
+  /** 拖文件进窗口 → 直接 calibredb add */
+  useEffect(() => {
+    const BOOK_EXT = /\.(epub|pdf|mobi|azw3?|fb2|cbz|cbr|txt|rtf|docx?|odt|htmlz?|lit|lrf|pdb|prc|snb|tcr)$/i
+    const hasFiles = (e: DragEvent): boolean =>
+      Array.from(e.dataTransfer?.types ?? []).includes('Files')
+    let depth = 0
+
+    const onEnter = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      depth += 1
+      setDropping(true)
+    }
+    const onOver = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+    }
+    const onLeave = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      depth = Math.max(0, depth - 1)
+      if (depth === 0) setDropping(false)
+    }
+    const onDrop = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      depth = 0
+      setDropping(false)
+      const files = Array.from(e.dataTransfer?.files ?? [])
+      const paths = files.map((f) => window.api.pathForFile(f)).filter((p) => Boolean(p))
+      const books = paths.filter((p) => BOOK_EXT.test(p))
+      if (!books.length) {
+        toast(paths.length ? '拖进来的不是电子书格式' : '没拿到文件路径', 'error')
+        return
+      }
+      void (async () => {
+        try {
+          const res = await window.api.invoke<{ ok: boolean; message: string }>(CH.libraryAdd, books)
+          toast(res.message || (res.ok ? `已加入 ${books.length} 本` : '添加失败'), res.ok ? 'success' : 'error')
+          if (res.ok) await reload()
+        } catch (err) {
+          toast(String(err), 'error')
+        }
+      })()
+    }
+
+    window.addEventListener('dragenter', onEnter)
+    window.addEventListener('dragover', onOver)
+    window.addEventListener('dragleave', onLeave)
+    window.addEventListener('drop', onDrop)
+    // 拖到窗口外松手（没落进页面）时也要把遮罩收掉
+    window.addEventListener('dragend', onLeave)
+    return () => {
+      window.removeEventListener('dragenter', onEnter)
+      window.removeEventListener('dragover', onOver)
+      window.removeEventListener('dragleave', onLeave)
+      window.removeEventListener('drop', onDrop)
+      window.removeEventListener('dragend', onLeave)
+    }
+  }, [reload, toast])
 
   const refreshEnv = useCallback(async () => {
     const running = await window.api.invoke<boolean>(CH.envCalibreRunning)
@@ -763,6 +825,15 @@ export default function App(): React.ReactElement {
               </div>
             </div>
           </header>
+
+          {dropping ? (
+            <div className="drop-veil">
+              <div className="drop-card">
+                <b>松开鼠标加入书库</b>
+                <span>EPUB / PDF / MOBI / AZW3 / TXT 等</span>
+              </div>
+            </div>
+          ) : null}
 
           <div className="view">
             {route.name === 'home' && <Home />}
