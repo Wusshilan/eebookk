@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Book, CatalogItem, CatalogPage } from '../../../shared/types'
 import { CH } from '../../../shared/ipc'
 import { useApp } from '../app/context'
@@ -62,6 +62,68 @@ function BannerCard({
 }
 
 /** 一行书：标题 + 右箭头，下面是封面卡 */
+/** 单行横滑容器：左右箭头按一屏滚动，到边自动禁用 */
+function HScroll({
+  children,
+  className
+}: {
+  children: React.ReactNode
+  className: string
+}): React.ReactElement {
+  const ref = useRef<HTMLDivElement>(null)
+  const [atLeft, setAtLeft] = useState(true)
+  const [atRight, setAtRight] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const sync = (): void => {
+      setAtLeft(el.scrollLeft <= 4)
+      setAtRight(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4)
+    }
+    sync()
+    el.addEventListener('scroll', sync, { passive: true })
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', sync)
+      ro.disconnect()
+    }
+  }, [children])
+
+  const slide = (dir: 1 | -1): void => {
+    const el = ref.current
+    if (!el) return
+    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' })
+  }
+
+  return (
+    <div className="hscroll">
+      <div className={`hscroll-track ${className}`} ref={ref}>
+        {children}
+      </div>
+      <button
+        type="button"
+        className="hs-arrow is-left"
+        aria-label="向左"
+        disabled={atLeft}
+        onClick={() => slide(-1)}
+      >
+        <IconChevron width={20} height={20} />
+      </button>
+      <button
+        type="button"
+        className="hs-arrow is-right"
+        aria-label="向右"
+        disabled={atRight}
+        onClick={() => slide(1)}
+      >
+        <IconChevron width={20} height={20} />
+      </button>
+    </div>
+  )
+}
+
 function Row({
   title,
   books,
@@ -80,7 +142,7 @@ function Row({
         <span>{title}</span>
         <IconChevron width={22} height={22} />
       </button>
-      <div className="home-covers">
+      <HScroll className="home-covers">
           {books.map((b) => (
             <button
               type="button"
@@ -93,7 +155,7 @@ function Row({
               <span className="home-cover-title">{b.title}</span>
             </button>
           ))}
-        </div>
+      </HScroll>
     </section>
   )
 }
@@ -122,14 +184,14 @@ function SourceRow({
       </div>
       {items.length === 0 ? (
         loading ? (
-          <div className="home-covers">
+          <HScroll className="home-covers">
             {Array.from({ length: 9 }).map((_, i) => (
               <div key={i} className="home-skeleton" />
             ))}
-          </div>
+          </HScroll>
         ) : null
       ) : (
-        <div className="home-covers">
+        <HScroll className="home-covers">
           {items.map((it) => (
             <button
               type="button"
@@ -148,7 +210,7 @@ function SourceRow({
               </span>
             </button>
           ))}
-        </div>
+        </HScroll>
       )}
     </section>
   )
@@ -192,7 +254,7 @@ export default function Home(): React.ReactElement {
     if (!books.length) return []
     const step = Math.max(1, Math.floor(books.length / 9))
     const out: Book[] = []
-    for (let i = 0; i < books.length && out.length < 9; i += step) out.push(books[i])
+    for (let i = 0; i < books.length && out.length < 18; i += step) out.push(books[i])
     return out
   }, [books])
 
@@ -227,7 +289,7 @@ export default function Home(): React.ReactElement {
 
   return (
     <div className="page page-home">
-      <div className="home-banners">
+      <HScroll className="home-banners">
         <BannerCard
           tone="green"
           word="书库"
@@ -249,7 +311,7 @@ export default function Home(): React.ReactElement {
           covers={localCoversB}
           onClick={() => navigate({ name: 'workbench' })}
         />
-      </div>
+      </HScroll>
 
       <Row
         title="从我的书库里推荐"
@@ -269,7 +331,7 @@ export default function Home(): React.ReactElement {
 
       <Row
         title="在读"
-        books={reading.slice(0, 9)}
+        books={reading.slice(0, 18)}
         onOpen={(b) => navigate({ name: 'book', id: b.id })}
         onMore={() => navigate({ name: 'library' })}
       />

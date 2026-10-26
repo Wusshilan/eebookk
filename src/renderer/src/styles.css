@@ -3577,3 +3577,97 @@ html[data-theme='dark'] .warn-box {
   border-radius: 10px;
   background: #fff;
 }
+
+/* ---- 首页单行横滑 + 箭头 ---- */
+
+.hscroll {
+  position: relative;
+}
+
+.hscroll-track {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.hscroll-track::-webkit-scrollbar {
+  display: none;
+}
+
+.hscroll-track.home-banners {
+  gap: 80px;
+  padding: 2px 0 6px;
+}
+
+.hscroll-track.home-covers {
+  gap: 24px;
+  padding: 2px 0 8px;
+}
+
+.hs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-1);
+  color: var(--t1);
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.hscroll:hover .hs-arrow:not(:disabled) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hs-arrow.is-left {
+  left: -14px;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.hs-arrow.is-right {
+  right: -14px;
+}
+/* 横滑里每张封面定死 145×194，不再被 flex 撑开 */
+.hscroll-track.home-covers > .home-cover,
+.hscroll-track.home-covers > .home-skeleton {
+  flex: 0 0 145px;
+  width: 145px;
+}
+
+.hscroll-track.home-covers .home-cover img {
+  width: 145px;
+  height: 194px;
+  object-fit: cover;
+}
+
+.hscroll-track.home-banners > * {
+  flex: 0 0 500px;
+}
+/* 箭头：能滚就显示，不靠悬停 */
+.hs-arrow:not(:disabled) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hs-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hs-arrow:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
