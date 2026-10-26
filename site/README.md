@@ -23,16 +23,16 @@ http://127.0.0.1:4173/?static=1
 下载按钮默认指向 GitHub Releases（`releases/latest`）。页面加载后会 HEAD 探测：
 
 ```
-site/download/eebookk-0.1.22-setup.exe
+site/download/eebookk-0.1.23-setup.exe
 ```
 
 - **本地 / 自托管**：文件存在 → 按钮直接下载本地安装包，不跳 GitHub。
 - **GitHub Pages 等静态托管**：`site/download/` 已被仓库 `.gitignore` 忽略（GitHub 单文件上限 100 MB，安装包 122 MB），文件不存在 → 按钮自动回退到 Releases 页面。
 
-发布新版本时，把 `release/eebookk-*.exe` 上传到 GitHub Releases（tag 建议 `v0.1.22`），再按需把 `site/download/` 里的文件替换成新包。若想固定直链，可把 `index.html` 中 `[data-download]` 的 `href` 改成：
+发布新版本时，把 `release/eebookk-*.exe` 上传到 GitHub Releases（tag 建议 `v0.1.23`），再按需把 `site/download/` 里的文件替换成新包。若想固定直链，可把 `index.html` 中 `[data-download]` 的 `href` 改成：
 
 ```
-https://github.com/Wusshilan/eebookk/releases/download/v0.1.22/eebookk-0.1.22-setup.exe
+https://github.com/Wusshilan/eebookk/releases/download/v0.1.23/eebookk-0.1.23-setup.exe
 ```
 
 ## 部署
@@ -50,11 +50,11 @@ https://github.com/Wusshilan/eebookk/releases/download/v0.1.22/eebookk-0.1.22-se
 
 | 位置 | 内容 |
 |---|---|
-| `index.html` hero 徽标 | `v0.1.22` |
-| `index.html` 下载区 | `0.1.22`、安装包名、日期、大小 |
+| `index.html` hero 徽标 | `v0.1.23` |
+| `index.html` 下载区 | `0.1.23`、安装包名、日期、大小 |
 | `index.html` JSON-LD | `softwareVersion` |
 | `index.html` `[data-download]` | `data-local` 文件名 |
-| `index.html` 页脚 | `版本 0.1.22` |
+| `index.html` 页脚 | `版本 0.1.23` |
 | `assets/og.png` | 需要时重新生成（见 `.tmp/asset_build.py`） |
 
 ## 资源来源

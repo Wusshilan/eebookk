@@ -2,7 +2,7 @@
 
 给 calibre 书库换一个壳：管库、整理元数据、批量转换、推送 Kindle，都在一个窗口里完成。
 
-版本 **0.1.22** ｜ Windows x64 ｜ Electron 45 + React 19 + TypeScript
+版本 **0.1.23** ｜ Windows x64 ｜ Electron 45 + React 19 + TypeScript
 
 ---
 
@@ -18,13 +18,13 @@ calibre 功能全，但界面是 2005 年的。eebookk 不碰 calibre 的源码�
 
 ## 安装
 
-下载 `eebookk-0.1.22-setup.exe` 直接装。需要本机已装 calibre（本机测试用的是 9.15.0），
+下载 `eebookk-0.1.23-setup.exe` 直接装。需要本机已装 calibre（本机测试用的是 9.15.0），
 程序会自动在常见位置找书库；找不到会提示你指定。
 
 首次启动会读取 calibre 的书库路径，之后可以在设置里看到当前路径。
 
 不想自己装 calibre 的话，用内置 calibre 的版本：`npm run calibre:vendor && npm run dist:win:fix`，
-产物在 `fix/eebookk-0.1.22-builtin-calibre-setup.exe`，安装包自带一份 calibre，首次启动会自动建空书库。
+产物在 `fix/eebookk-0.1.23-builtin-calibre-setup.exe`，安装包自带一份 calibre，首次启动会自动建空书库。
 细节和许可说明见 [`fix/README.md`](fix/README.md)。
 
 ---
