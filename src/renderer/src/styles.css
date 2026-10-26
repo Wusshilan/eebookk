@@ -3525,3 +3525,55 @@ html[data-theme='dark'] .warn-box {
   font-size: 13px;
   color: var(--t2);
 }
+
+/* ---- 编辑器：工具栏与预览分栏 ---- */
+
+.ed-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.ed-find {
+  height: 30px;
+  min-width: 150px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--t1);
+  font-size: 13px;
+}
+
+.ed-hits {
+  font-size: 12px;
+  color: var(--t2);
+  min-width: 42px;
+}
+
+.ed-split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 10px;
+}
+
+.ed-split .ed-code {
+  flex: 1;
+  min-width: 0;
+}
+
+.ed-split.is-preview .ed-code {
+  flex: 0 0 52%;
+}
+
+.ed-preview {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: #fff;
+}

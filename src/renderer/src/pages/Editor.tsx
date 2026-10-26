@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { CH } from '../../../shared/ipc'
 import type { EpubFileContent, EpubFileEntry } from '../../../shared/types'
 import { useApp } from '../app/context'
@@ -37,6 +37,9 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [backups, setBackups] = useState<string[]>([])
+  const [findText, setFindText] = useState('')
+  const [replaceText, setReplaceText] = useState('')
+  const [preview, setPreview] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -85,6 +88,42 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
     } finally {
       setBusy(false)
     }
+  }
+
+  /** 当前文件里的命中数 */
+  const hitCount = content?.status === 'ok' && findText ? content.text.split(findText).length - 1 : 0
+
+  const jumpHit = (dir: 1 | -1): void => {
+    if (!content || content.status !== 'ok' || !findText) return
+    const el = document.querySelector('.ed-code') as HTMLTextAreaElement | null
+    if (!el) return
+    const from = dir > 0 ? el.selectionEnd : 0
+    const idx = dir > 0 ? content.text.indexOf(findText, from) : content.text.lastIndexOf(findText, from)
+    const at = idx === -1 ? content.text.indexOf(findText) : idx
+    if (at === -1) {
+      return
+    }
+    el.focus()
+    el.setSelectionRange(at, at + findText.length)
+    el.scrollTop = Math.max(0, content.text.slice(0, at).split('\n').length * 20 - 160)
+  }
+
+  const replaceOne = (): void => {
+    if (!content || content.status !== 'ok' || !findText) return
+    const el = document.querySelector('.ed-code') as HTMLTextAreaElement | null
+    const from = el?.selectionStart ?? 0
+    const at = content.text.indexOf(findText, from)
+    const pos = at === -1 ? content.text.indexOf(findText) : at
+    if (pos === -1) return
+    const next = content.text.slice(0, pos) + replaceText + content.text.slice(pos + findText.length)
+    setContent({ ...content, text: next })
+    setDirty(true)
+  }
+
+  const replaceAll = (): void => {
+    if (!content || content.status !== 'ok' || !findText) return
+    setContent({ ...content, text: content.text.split(findText).join(replaceText) })
+    setDirty(true)
   }
 
   const save = async (): Promise<void> => {
@@ -227,15 +266,63 @@ export default function Editor({ id }: { id: number }): React.ReactElement {
             </div>
           ) : null}
           {content?.status === 'ok' ? (
-            <textarea
-              className="ed-code"
-              spellCheck={false}
-              value={content.text}
-              onChange={(e) => {
-                setContent({ ...content, text: e.target.value })
-                setDirty(true)
-              }}
-            />
+            <>
+              <div className="ed-tools">
+                <input
+                  className="ed-find"
+                  value={findText}
+                  onChange={(e) => setFindText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') jumpHit(e.shiftKey ? -1 : 1)
+                  }}
+                  placeholder="查找"
+                />
+                <input
+                  className="ed-find"
+                  value={replaceText}
+                  onChange={(e) => setReplaceText(e.target.value)}
+                  placeholder="替换为"
+                />
+                <span className="ed-hits">{findText ? `${hitCount} 处` : ''}</span>
+                <button className="btn btn-sm" disabled={!hitCount} onClick={() => jumpHit(1)}>
+                  下一个
+                </button>
+                <button className="btn btn-sm" disabled={!hitCount} onClick={() => jumpHit(-1)}>
+                  上一个
+                </button>
+                <button className="btn btn-sm" disabled={!hitCount} onClick={replaceOne}>
+                  替换
+                </button>
+                <button className="btn btn-sm" disabled={!hitCount} onClick={replaceAll}>
+                  全部替换
+                </button>
+                <span className="spacer" />
+                <button
+                  className={`btn btn-sm${preview ? ' btn-primary' : ''}`}
+                  onClick={() => setPreview((v) => !v)}
+                >
+                  预览
+                </button>
+              </div>
+              <div className={`ed-split${preview ? ' is-preview' : ''}`}>
+                <textarea
+                  className="ed-code"
+                  spellCheck={false}
+                  value={content.text}
+                  onChange={(e) => {
+                    setContent({ ...content, text: e.target.value })
+                    setDirty(true)
+                  }}
+                />
+                {preview ? (
+                  <iframe
+                    className="ed-preview"
+                    title="预览"
+                    src={`epubres://${id}/${content.path}`}
+                  />
+                ) : null}
+              </div>
+            </>
           ) : content ? (
             <div className="ed-blocked">
               {content.path} · {bytes(content.bytes)}
