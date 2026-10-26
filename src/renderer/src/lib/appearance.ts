@@ -43,6 +43,13 @@ export function applyAppearance(a?: Partial<AppearanceSettings> | null): void {
   style.setProperty('--accent-shadow', `0 0 12px 1px rgba(${accent.rgb}, 0.18)`)
 
   root.dataset.theme = resolvedTheme(a?.theme)
+
+  // 缓存一份，下次启动在 React 渲染前就能把主题铺上，避免白闪
+  try {
+    localStorage.setItem('eebookk.appearance', JSON.stringify(a ?? {}))
+  } catch {
+    /* 隐私模式下写不了，忽略 */
+  }
 }
 
 /** 跟随系统时需要监听系统主题变化 */

@@ -3246,3 +3246,23 @@ html[data-theme='dark'] .warn-box {
 .icon-pop-item:hover {
   background: var(--pill-grey);
 }
+
+
+.icon-pop-sep {
+  height: 1px;
+  background: var(--hairline-soft);
+  margin: 6px 4px;
+}
+
+.icon-pop-accents {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 6px;
+}
+
+.icon-pop-accents .accent-dot {
+  width: 20px;
+  height: 20px;
+}

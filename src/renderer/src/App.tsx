@@ -33,6 +33,14 @@ interface NavItem {
 }
 
 /** 截图校验用：允许通过 #library 这样的 hash 指定初始页面 */
+const ACCENT_LIST = [
+  { k: 'green', c: '#07c160' },
+  { k: 'blue', c: '#1e80ff' },
+  { k: 'purple', c: '#7c5cff' },
+  { k: 'orange', c: '#ff7a45' },
+  { k: 'rose', c: '#f43f5e' }
+]
+
 function initialRoute(): Route {
   // 允许 #book:747,cover 这种「路由 + 附加动作」的写法，附加动作由页面自己读
   const raw = window.location.hash.replace(/^#/, '').trim().split(',')[0]
@@ -307,12 +315,29 @@ export default function App(): React.ReactElement {
     }
   }, [themeOpen])
 
+  /** 顶栏改主题时必须基于最新的外观，否则会把设置页刚改的主题色/圆角覆盖回去 */
+  const currentAppearance = (): Record<string, unknown> => {
+    try {
+      const raw = localStorage.getItem('eebookk.appearance')
+      if (raw) return JSON.parse(raw) as Record<string, unknown>
+    } catch {
+      /* 缓存坏了就用内存里的 */
+    }
+    return (appearanceRef.current as Record<string, unknown> | null) ?? {}
+  }
+
   const pickTheme = async (t: 'light' | 'dark' | 'system'): Promise<void> => {
-    const cur = (appearanceRef.current as Record<string, unknown> | null) ?? {}
-    const next = { ...cur, theme: t }
+    const next = { ...currentAppearance(), theme: t }
     applyAppearance(next as never)
     appearanceRef.current = next as never
     setThemeOpen(false)
+    await window.api.invoke(CH.settingsSet, { appearance: next }).catch(() => undefined)
+  }
+
+  const pickAccent = async (k: string): Promise<void> => {
+    const next = { ...currentAppearance(), accent: k }
+    applyAppearance(next as never)
+    appearanceRef.current = next as never
     await window.api.invoke(CH.settingsSet, { appearance: next }).catch(() => undefined)
   }
 
@@ -404,7 +429,7 @@ export default function App(): React.ReactElement {
   ])
 
   if (error) return <div className="boot-error">书库读取失败：{error}</div>
-  if (!payload) return <div className="boot-loading">正在读取书库…</div>
+  if (!payload) return <div className="boot-loading" />
   if (!stats || stats.total === 0) {
     return (
       <div className="boot-error">
@@ -596,6 +621,19 @@ export default function App(): React.ReactElement {
                           {item.t}
                         </button>
                       ))}
+                      <div className="icon-pop-sep" />
+                      <div className="icon-pop-accents">
+                        {ACCENT_LIST.map((a) => (
+                          <button
+                            key={a.k}
+                            type="button"
+                            className="accent-dot"
+                            style={{ background: a.c }}
+                            aria-label={a.k}
+                            onClick={() => void pickAccent(a.k)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                 </div>

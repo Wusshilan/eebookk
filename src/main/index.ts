@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow, ipcMain, protocol, net, shell } from 'electron'
+﻿import { app, BrowserWindow, ipcMain, nativeTheme, protocol, net, shell } from 'electron'
 import { mkdirSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -69,7 +69,8 @@ function createWindow(): void {
     minHeight: 620,
     show: false,
     frame: false,
-    backgroundColor: '#ffffff',
+    // 深色系统下窗口底色也要深，否则开窗那一下会白闪
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#141416' : '#f6f6f6',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // preload 只用 contextBridge / ipcRenderer，不需要 Node 能力，沙箱可以开着
