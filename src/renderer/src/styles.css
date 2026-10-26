@@ -7,7 +7,7 @@
   --pad-l: 58px;
   --pad-r: 60px;
   /* 侧栏胶囊：Figma 101:253 的 Rectangle 4 是 cornerRadius=20、cornerSmoothing=0.6（2 倍稿） */
-  --radius-nav: 10px;
+  --radius-nav: 28px;
   --radius-bl: 10px;
   --radius-banner: 8px;
   --radius-card: 6px;
