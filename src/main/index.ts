@@ -16,6 +16,7 @@ import { registerTaxonomy } from './taxonomy'
 import { registerEpub } from './epub'
 import { registerSources } from './sources'
 import { registerMeta } from './meta'
+import { registerEpubEdit } from './epub-edit'
 import { applyCover, pickCoverImage, readCoverDataUrl, removeCover } from './cover'
 import { checkForUpdates } from './updates'
 import { installProcessHandlers, logger } from './logger'
@@ -259,6 +260,7 @@ app.whenReady().then(async () => {
   registerEpub()
   registerSources()
   registerMeta()
+  registerEpubEdit()
 
   ipcMain.on('window:minimize', () => mainWindow?.minimize())
   ipcMain.on('window:maximize', () => {

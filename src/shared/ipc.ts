@@ -81,6 +81,13 @@ export const CH = {
   coverSearch: 'meta:coverSearch',
   coverApplyUrl: 'meta:coverApplyUrl',
 
+  // 内置电子书编辑器
+  epubList: 'epubEdit:list',
+  epubRead: 'epubEdit:read',
+  epubWrite: 'epubEdit:write',
+  epubRevert: 'epubEdit:revert',
+  epubBackupList: 'epubEdit:backups',
+
   // 事件（主进程 -> 渲染进程）
   evtTasks: 'evt:tasks',
   evtCollections: 'evt:collections',

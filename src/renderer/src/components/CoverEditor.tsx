@@ -5,8 +5,11 @@ import type { WebMetaHit } from '../../../shared/types'
 
 const CW = 300
 const CHh = 450
-const OUT_W = 900
-const OUT_H = 1350
+const OUT_SIZES = [
+  { label: '900 x 1350', w: 900, h: 1350 },
+  { label: '1200 x 1800', w: 1200, h: 1800 },
+  { label: '1600 x 2400', w: 1600, h: 2400 }
+]
 
 interface Props {
   bookId: number
@@ -36,6 +39,7 @@ export default function CoverEditor({
   const [off, setOff] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [sizeIdx, setSizeIdx] = useState(0)
   const [err, setErr] = useState<string | null>(null)
   const [webHits, setWebHits] = useState<WebMetaHit[]>([])
   const [webLoading, setWebLoading] = useState(false)
@@ -181,6 +185,39 @@ export default function CoverEditor({
     }
   }
 
+  /** 把旋转、翻转直接烘进图片，后续裁剪逻辑不用跟着变复杂 */
+  const bake = (mode: 'rotate' | 'flip'): void => {
+    const el = imgRef.current
+    if (!el || !nat.w) return
+    const canvas = document.createElement('canvas')
+    if (mode === 'rotate') {
+      canvas.width = nat.h
+      canvas.height = nat.w
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.translate(nat.h, 0)
+      ctx.rotate(Math.PI / 2)
+      ctx.drawImage(el, 0, 0)
+    } else {
+      canvas.width = nat.w
+      canvas.height = nat.h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.translate(nat.w, 0)
+      ctx.scale(-1, 1)
+      ctx.drawImage(el, 0, 0)
+    }
+    setSrc(canvas.toDataURL('image/png'))
+    setNat({ w: 0, h: 0 })
+    setZoom(1)
+    setOff({ x: 0, y: 0 })
+  }
+
+  const reset = (): void => {
+    setZoom(1)
+    setOff({ x: 0, y: 0 })
+  }
+
   const save = async (): Promise<void> => {
     const el = imgRef.current
     if (!el || !nat.w) return
@@ -188,8 +225,9 @@ export default function CoverEditor({
     setErr(null)
     try {
       const canvas = document.createElement('canvas')
-      canvas.width = OUT_W
-      canvas.height = OUT_H
+      const out = OUT_SIZES[sizeIdx]
+      canvas.width = out.w
+      canvas.height = out.h
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('无法创建画布')
       ctx.imageSmoothingQuality = 'high'
@@ -197,7 +235,7 @@ export default function CoverEditor({
       const sy = -off.y / scale
       const sw = CW / scale
       const sh = CHh / scale
-      ctx.drawImage(el, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H)
+      ctx.drawImage(el, sx, sy, sw, sh, 0, 0, out.w, out.h)
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
       const res = await invoke<{ ok: boolean; message: string }>(CH.coverApply, bookId, dataUrl)
       if (res.ok) {
@@ -234,7 +272,6 @@ export default function CoverEditor({
       <div className="ce-modal">
         <div className="ce-head">
           <h3 className="ce-title">封面</h3>
-          <span className="ce-sub">拖拽移动 · 滚轮或滑块缩放 · 输出 900×1350</span>
           <span className="spacer" style={{ flex: 1 }} />
           <span className="ce-sub ce-ratio">{(zoom * 100).toFixed(0)}%</span>
         </div>
@@ -309,6 +346,29 @@ export default function CoverEditor({
                 </button>
               ) : null}
             </div>
+            <div className="ce-tools">
+              <button className="btn btn-sm" disabled={!nat.w} onClick={() => bake('rotate')}>
+                旋转 90°
+              </button>
+              <button className="btn btn-sm" disabled={!nat.w} onClick={() => bake('flip')}>
+                水平翻转
+              </button>
+              <button className="btn btn-sm" disabled={!nat.w} onClick={reset}>
+                重置
+              </button>
+              <select
+                className="select"
+                value={sizeIdx}
+                onChange={(e) => setSizeIdx(Number(e.target.value))}
+              >
+                {OUT_SIZES.map((s, i) => (
+                  <option key={s.label} value={i}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="ce-web">
               <button className="btn" disabled={webLoading} onClick={() => void searchCovers()}>
                 {webLoading ? '查找中…' : '全网找封面'}

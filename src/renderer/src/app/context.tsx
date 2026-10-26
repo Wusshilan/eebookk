@@ -14,6 +14,7 @@ export type Route =
   | { name: 'favorites' }
   | { name: 'list'; id: string }
   | { name: 'reader'; id: number }
+  | { name: 'editor'; id: number }
 
 export interface AppApi {
   payload: LibraryPayload

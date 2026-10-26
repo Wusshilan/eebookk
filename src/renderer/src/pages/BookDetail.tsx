@@ -268,9 +268,7 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
               </div>
               <button
                 className="btn btn-sm"
-                disabled={busyAction !== null}
-                onClick={() => void runTool('edit', CH.bookEdit, book.id)}
-                title="用 calibre 的电子书编辑器打开，适合改正文和排版"
+                onClick={() => navigate({ name: 'editor', id: book.id })}
               >
                 编辑书籍
               </button>

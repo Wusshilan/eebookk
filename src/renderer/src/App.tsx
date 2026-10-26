@@ -23,6 +23,7 @@ import Tags from './pages/Tags'
 import Authors from './pages/Authors'
 import Collections from './pages/Collections'
 import Reader from './pages/Reader'
+import Editor from './pages/Editor'
 
 interface NavItem {
   key: Route['name']
@@ -43,6 +44,10 @@ function initialRoute(): Route {
   if (raw.startsWith('list:')) {
     const id = raw.slice(5)
     return id ? { name: 'list', id } : { name: 'home' }
+  }
+  if (raw.startsWith('editor:')) {
+    const id = Number(raw.slice(7))
+    return Number.isFinite(id) ? { name: 'editor', id } : { name: 'home' }
   }
   if (raw.startsWith('reader:')) {
     const id = Number(raw.slice(7))
@@ -562,6 +567,7 @@ export default function App(): React.ReactElement {
             {route.name === 'favorites' && <Collections mode="favorites" />}
             {route.name === 'list' && <Collections mode="list" listId={route.id} />}
             {route.name === 'reader' && <Reader id={route.id} />}
+            {route.name === 'editor' && <Editor id={route.id} />}
           </div>
 
           <BottomBar />

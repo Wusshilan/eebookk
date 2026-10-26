@@ -298,6 +298,27 @@ export interface ReaderInfo {
   error?: string
 }
 
+/* ---------------- 内置电子书编辑器 ---------------- */
+
+export interface EpubFileEntry {
+  /** 包内绝对路径 */
+  path: string
+  /** 短名，列表显示用 */
+  name: string
+  size: number
+  kind: 'html' | 'css' | 'opf' | 'image' | 'font' | 'other'
+  /** 能不能在编辑器里改 */
+  editable: boolean
+}
+
+export interface EpubFileContent {
+  path: string
+  text: string
+  /** ok / binary（图片等不支持编辑）/ too-large / missing */
+  status: 'ok' | 'binary' | 'too-large' | 'missing'
+  bytes: number
+}
+
 /* ---------------- 外部书目源（OPDS） ---------------- */
 
 export interface BookSource {
