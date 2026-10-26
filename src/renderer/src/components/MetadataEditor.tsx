@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CH } from '../../../shared/ipc'
-import type { Book, EditResult, MetadataPatch } from '../../../shared/types'
+import type { Book, EditResult, MetadataPatch, WebMetaHit } from '../../../shared/types'
 import { useApp } from '../app/context'
 import { htmlToText, textToHtml } from '../lib/cover'
 import {
@@ -51,12 +51,51 @@ export default function MetadataEditor({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [webQuery, setWebQuery] = useState(book.title)
+  const [hits, setHits] = useState<WebMetaHit[]>([])
+  const [looking, setLooking] = useState(false)
+  const [lookError, setLookError] = useState('')
 
   // 详情页用 key={book.id} 挂载，换书时自然重置草稿
   const ids = useMemo(() => Object.entries(book.identifiers), [book.identifiers])
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]): void => {
     setDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
+  /** 全网查找：书名或 ISBN，豆瓣 + NeoDB 一起搜 */
+  const webLookup = async (): Promise<void> => {
+    const q = webQuery.trim()
+    if (!q) {
+      setLookError('先填书名或 ISBN')
+      return
+    }
+    setLooking(true)
+    setLookError('')
+    try {
+      const list = await window.api.invoke<WebMetaHit[]>(CH.metaSearch, q)
+      const arr = Array.isArray(list) ? list : []
+      setHits(arr)
+      if (arr.length === 0) setLookError('没搜到')
+    } catch (e) {
+      setLookError(String(e))
+    } finally {
+      setLooking(false)
+    }
+  }
+
+  /** 把一条结果填进表单，不立刻写库 */
+  const fillFrom = (h: WebMetaHit): void => {
+    setDraft((d) => ({
+      ...d,
+      title: h.title || d.title,
+      authors: h.authors || d.authors,
+      publisher: h.publisher || d.publisher,
+      pubdate: h.pubdate || d.pubdate,
+      languages: h.language || d.languages,
+      comments: h.summary || d.comments
+    }))
+    setHits([])
   }
 
   const save = async (): Promise<void> => {
@@ -134,7 +173,57 @@ export default function MetadataEditor({
         </div>
       ) : null}
 
+      <div className="me-web">
+        <input
+          className="input"
+          value={webQuery}
+          placeholder="书名或 ISBN"
+          onChange={(e) => setWebQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void webLookup()
+          }}
+        />
+        <button className="btn btn-sm" disabled={looking} onClick={() => void webLookup()}>
+          {looking ? '查找中' : '全网查找'}
+        </button>
+        {lookError ? <em className="me-err">{lookError}</em> : null}
+      </div>
+
+      {hits.length > 0 ? (
+        <div className="me-hits">
+          {hits.map((h) => (
+            <button
+              type="button"
+              key={`${h.source}-${h.id}`}
+              className="me-hit"
+              onClick={() => fillFrom(h)}
+              title="填入表单，不会立刻写库"
+            >
+              {h.coverUrl ? (
+                <img src={h.coverUrl} alt="" width={48} height={64} />
+              ) : (
+                <span className="me-hit-noimg" />
+              )}
+              <span className="me-hit-body">
+                <span className="me-hit-title">{h.title}</span>
+                <span className="me-hit-sub">{h.authors}</span>
+                <span className="me-hit-sub">{[h.publisher, h.pubdate].filter(Boolean).join(' · ')}</span>
+              </span>
+              <span className="me-hit-side">
+                <span className="me-hit-src">{h.sourceName}</span>
+                {h.coverWidth && h.coverHeight ? (
+                  <span className="me-hit-res">
+                    {h.coverWidth}x{h.coverHeight}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="me-grid">
+
         <label className="form-row">
           <span>书名</span>
           <input

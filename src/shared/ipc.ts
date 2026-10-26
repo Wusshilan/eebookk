@@ -74,6 +74,12 @@ export const CH = {
   sourcesSearch: 'sources:search',
   sourcesDownload: 'sources:download',
 
+  // 全网元数据 / 封面
+  metaSearch: 'meta:search',
+  metaDetail: 'meta:detail',
+  coverSearch: 'meta:coverSearch',
+  coverApplyUrl: 'meta:coverApplyUrl',
+
   // 事件（主进程 -> 渲染进程）
   evtTasks: 'evt:tasks',
   evtCollections: 'evt:collections',

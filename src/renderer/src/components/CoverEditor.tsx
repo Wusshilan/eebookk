@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useRef, useState } from 'react'
 import { CH } from '../../../shared/ipc'
 import type { EebookkApi } from '../../../preload/index'
+import type { WebMetaHit } from '../../../shared/types'
 
 const CW = 300
 const CHh = 450
@@ -9,6 +10,8 @@ const OUT_H = 1350
 
 interface Props {
   bookId: number
+  /** 用来全网找封面的关键词 */
+  title: string
   onClose: () => void
   onSaved: (message: string) => void
   invoke: EebookkApi['invoke']
@@ -20,6 +23,7 @@ interface Props {
 
 export default function CoverEditor({
   bookId,
+  title,
   onClose,
   onSaved,
   invoke,
@@ -33,11 +37,53 @@ export default function CoverEditor({
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [webHits, setWebHits] = useState<WebMetaHit[]>([])
+  const [webLoading, setWebLoading] = useState(false)
+  const [webError, setWebError] = useState('')
   const imgRef = useRef<HTMLImageElement | null>(null)
   const dragRef = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null)
 
   const baseScale = nat.w > 0 ? Math.max(CW / nat.w, CHh / nat.h) : 1
   const scale = baseScale * zoom
+
+  /** 全网找封面：返回的每一项都带真实像素，按面积从大到小 */
+  const searchCovers = async (): Promise<void> => {
+    if (!title.trim()) {
+      setWebError('这本书没有书名')
+      return
+    }
+    setWebLoading(true)
+    setWebError('')
+    try {
+      const list = await invoke<WebMetaHit[]>(CH.coverSearch, title.trim())
+      const arr = Array.isArray(list) ? list : []
+      setWebHits(arr)
+      if (arr.length === 0) setWebError('没找到封面')
+    } catch (e) {
+      setWebError(String(e))
+    } finally {
+      setWebLoading(false)
+    }
+  }
+
+  /** 选中一个网络封面直接写进 calibre */
+  const applyRemote = async (url: string): Promise<void> => {
+    setBusy(true)
+    setErr(null)
+    try {
+      const res = await invoke<{ ok: boolean; message: string }>(CH.coverApplyUrl, bookId, url)
+      if (!res.ok) {
+        setErr(res.message || '写封面失败')
+        return
+      }
+      onSaved(res.message)
+      onClose()
+    } catch (e) {
+      setErr(String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const clamp = useCallback(
     (x: number, y: number, s: number): { x: number; y: number } => {
@@ -248,11 +294,7 @@ export default function CoverEditor({
                 onChange={(e) => onZoom(Number(e.target.value) / 100)}
               />
             </div>
-            <div className="ce-tip">
-              calibre 的封面是 <b>2:3</b>，这里按同一比例裁剪，避免推送 Kindle 后变形。
-              <br />
-              保存时会压成 900×1350 的 JPEG，再交给 calibre 生成 <code>cover.jpg</code>。
-            </div>
+
             {calibreRunning ? (
               <div className="warn-box">calibre 正在运行，保存会被拒绝。请先关闭 calibre。</div>
             ) : null}
@@ -267,6 +309,34 @@ export default function CoverEditor({
                 </button>
               ) : null}
             </div>
+            <div className="ce-web">
+              <button className="btn" disabled={webLoading} onClick={() => void searchCovers()}>
+                {webLoading ? '查找中…' : '全网找封面'}
+              </button>
+              {webError ? <span className="ce-sub">{webError}</span> : null}
+            </div>
+            {webHits.length > 0 ? (
+              <div className="ce-web-grid">
+                {webHits.map((h) => (
+                  <button
+                    key={`${h.source}-${h.id}`}
+                    type="button"
+                    className="ce-web-item"
+                    disabled={busy || calibreRunning}
+                    title={`${h.sourceName}：${h.coverWidth}x${h.coverHeight}`}
+                    onClick={() => {
+                      if (h.coverUrl) void applyRemote(h.coverUrl)
+                    }}
+                  >
+                    <img src={h.coverUrl ?? ''} alt="" />
+                    <span className="ce-web-res">
+                      {h.coverWidth}x{h.coverHeight}
+                    </span>
+                    <span className="ce-web-src">{h.sourceName}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 

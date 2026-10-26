@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CH } from '../../../shared/ipc'
 import type { Book, CollectionsStore } from '../../../shared/types'
 import { useApp } from '../app/context'
@@ -26,15 +27,19 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
   } = useApp()
   const book = useMemo(() => books.find((b) => b.id === id), [books, id])
   const [listMenuOpen, setListMenuOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const listMenuRef = useRef<HTMLDivElement>(null)
 
   // 下拉打开时：点外部或按 Esc 关闭
   useEffect(() => {
     if (!listMenuOpen) return
     const onDown = (e: MouseEvent): void => {
-      if (listMenuRef.current && !listMenuRef.current.contains(e.target as Node)) {
-        setListMenuOpen(false)
-      }
+      const t = e.target as Node
+      if (listMenuRef.current?.contains(t)) return
+      // 触发器自己也算「内部」，否则点一下会关了又开
+      if (triggerRef.current?.contains(t)) return
+      setListMenuOpen(false)
     }
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') setListMenuOpen(false)
@@ -123,6 +128,7 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
   }
 
   const addToList = async (listId: string): Promise<void> => {
+    setListMenuOpen(false)
     const next = await window.api.invoke<CollectionsStore>(CH.listAddBooks, listId, [book.id])
     if (next) {
       await reloadCollections()
@@ -220,33 +226,47 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
             <div className="detail-actions detail-actions-sub">
               <div className="listmenu" ref={listMenuRef}>
                 <button
+                  ref={triggerRef}
                   className="btn btn-sm"
-                  onClick={() => setListMenuOpen((v) => !v)}
+                  onClick={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect()
+                    // 菜单向下展开，超出窗口底部就往上翻
+                    const openUp = r.bottom + 300 > window.innerHeight
+                    setMenuPos({ top: openUp ? Math.max(8, r.top - 300) : r.bottom + 6, left: r.left })
+                    setListMenuOpen((v) => !v)
+                  }}
                   title="把这本书加进某个书单"
                 >
                   加入书单
                 </button>
-                {listMenuOpen ? (
-                  <div className="listmenu-pop">
-                    {collections.lists.length === 0 ? (
-                      <div className="listmenu-empty">还没有书单</div>
-                    ) : (
-                      collections.lists.map((l) => (
-                        <button
-                          key={l.id}
-                          className="listmenu-item"
-                          onClick={() => void addToList(l.id)}
-                        >
-                          <span className="listmenu-name">{l.name}</span>
-                          <span className="listmenu-num">{l.bookIds.length}</span>
+                {listMenuOpen
+                  ? createPortal(
+                      <div
+                        className="listmenu-pop is-fixed"
+                        ref={listMenuRef}
+                        style={{ top: menuPos.top, left: menuPos.left }}
+                      >
+                        {collections.lists.length === 0 ? (
+                          <div className="listmenu-empty">还没有书单</div>
+                        ) : (
+                          collections.lists.map((l) => (
+                            <button
+                              key={l.id}
+                              className="listmenu-item"
+                              onClick={() => void addToList(l.id)}
+                            >
+                              <span className="listmenu-name">{l.name}</span>
+                              <span className="listmenu-num">{l.bookIds.length}</span>
+                            </button>
+                          ))
+                        )}
+                        <button className="listmenu-item listmenu-new" onClick={() => void createAndAdd()}>
+                          ＋ 新建书单
                         </button>
-                      ))
-                    )}
-                    <button className="listmenu-item listmenu-new" onClick={() => void createAndAdd()}>
-                      ＋ 新建书单
-                    </button>
-                  </div>
-                ) : null}
+                      </div>,
+                      document.body
+                    )
+                  : null}
               </div>
               <button
                 className="btn btn-sm"
@@ -377,6 +397,7 @@ export default function BookDetail({ id }: { id: number }): React.ReactElement {
       {coverOpen ? (
         <CoverEditor
           bookId={book.id}
+          title={book.title}
           hasCover={book.hasCover}
           calibreRunning={calibreRunning}
           invoke={(c, ...a) => window.api.invoke(c, ...a)}

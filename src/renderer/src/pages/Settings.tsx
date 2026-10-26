@@ -5,7 +5,7 @@ import { useApp } from '../app/context'
 import { applyAppearance } from '../lib/appearance'
 import { IconCheck, IconRefresh } from '../icons'
 
-type TabKey = 'general' | 'library' | 'convert' | 'device' | 'sources' | 'update' | 'about'
+type TabKey = 'general' | 'library' | 'convert' | 'device' | 'sources' | 'web' | 'update' | 'about'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'general', label: '通用' },
@@ -13,6 +13,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'convert', label: '转换与元数据' },
   { key: 'device', label: '设备与推送' },
   { key: 'sources', label: '书源' },
+  { key: 'web', label: '全网检索' },
   { key: 'update', label: '更新' },
   { key: 'about', label: '关于' }
 ]
@@ -168,6 +169,7 @@ export default function Settings(): React.ReactElement {
         metadata: draft.metadata,
         device: draft.device,
         sources: draft.sources,
+        web: draft.web,
         smtp: {
           enabled: draft.smtp.enabled,
           host: draft.smtp.host.trim(),
@@ -646,6 +648,40 @@ export default function Settings(): React.ReactElement {
               <button className="btn btn-sm" onClick={() => void addSource()}>
                 添加 OPDS 源
               </button>
+            </Row>
+          </section>
+        ) : null}
+
+        {tab === 'web' ? (
+          <section className="set-section">
+            <h2 className="set-h2">检索来源</h2>
+            {[
+              { id: 'douban', name: '豆瓣读书' },
+              { id: 'neodb', name: 'NeoDB' }
+            ].map((s) => (
+              <Row key={s.id} label={s.name}>
+                <Check
+                  checked={draft.web.sources.includes(s.id)}
+                  onChange={(v) =>
+                    patch('web', {
+                      sources: v
+                        ? [...draft.web.sources, s.id]
+                        : draft.web.sources.filter((x) => x !== s.id)
+                    })
+                  }
+                  label="启用"
+                />
+              </Row>
+            ))}
+            <Row label="封面最小宽度">
+              <div className="set-inline">
+                <input
+                  className="input set-port"
+                  value={draft.web.minCoverWidth}
+                  onChange={(e) => patch('web', { minCoverWidth: Number(e.target.value) || 0 })}
+                />
+                <span className="set-unit">px</span>
+              </div>
             </Row>
           </section>
         ) : null}

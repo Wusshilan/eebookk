@@ -1,4 +1,4 @@
-import { app, safeStorage } from 'electron'
+﻿import { app, safeStorage } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { AppSettings, SmtpSettings } from '../shared/types'
@@ -22,6 +22,7 @@ const DEFAULTS: AppSettings = {
   general: { closeToTray: false, restoreLastPage: false },
   metadata: { authorSeparator: ' & ', tagSeparator: ',', embedOnSave: false },
   device: { usbSubdir: 'eebookk', maxAttachmentMB: 25 },
+  web: { sources: ['douban', 'neodb'], minCoverWidth: 200 },
   sources: [
     {
       id: 'gutenberg',
@@ -78,6 +79,7 @@ export class SettingsStore {
       general: { ...DEFAULTS.general },
       metadata: { ...DEFAULTS.metadata },
       device: { ...DEFAULTS.device },
+      web: { ...DEFAULTS.web },
       // 数组要深拷贝，否则改一处会把 DEFAULTS 本身带脏
       sources: DEFAULTS.sources.map((s) => ({ ...s }))
     }
@@ -96,7 +98,8 @@ export class SettingsStore {
         update: { ...base.update, ...(raw.update ?? {}) },
         general: { ...base.general, ...(raw.general ?? {}) },
         metadata: { ...base.metadata, ...(raw.metadata ?? {}) },
-        device: { ...base.device, ...(raw.device ?? {}) }
+        device: { ...base.device, ...(raw.device ?? {}) },
+        web: { ...base.web, ...(raw.web ?? {}) }
       }
       if (raw.smtpPasswordEnc) {
         try {
@@ -134,6 +137,7 @@ export class SettingsStore {
     if (rest.general) this.data.general = { ...this.data.general, ...rest.general }
     if (rest.metadata) this.data.metadata = { ...this.data.metadata, ...rest.metadata }
     if (rest.device) this.data.device = { ...this.data.device, ...rest.device }
+    if (rest.web) this.data.web = { ...this.data.web, ...rest.web }
     if (Array.isArray(rest.sources)) {
       // 内置源不能删：patch 里漏掉的按 id 补回来，只允许改 url / searchUrl / enabled
       const kept = rest.sources.filter((s) => s && typeof s.id === 'string')

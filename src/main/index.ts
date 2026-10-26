@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, net, shell } from 'electron'
+﻿import { app, BrowserWindow, ipcMain, protocol, net, shell } from 'electron'
 import { mkdirSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -15,6 +15,7 @@ import { registerCollections } from './collections'
 import { registerTaxonomy } from './taxonomy'
 import { registerEpub } from './epub'
 import { registerSources } from './sources'
+import { registerMeta } from './meta'
 import { applyCover, pickCoverImage, readCoverDataUrl, removeCover } from './cover'
 import { checkForUpdates } from './updates'
 import { installProcessHandlers, logger } from './logger'
@@ -257,6 +258,7 @@ app.whenReady().then(async () => {
   registerTaxonomy()
   registerEpub()
   registerSources()
+  registerMeta()
 
   ipcMain.on('window:minimize', () => mainWindow?.minimize())
   ipcMain.on('window:maximize', () => {

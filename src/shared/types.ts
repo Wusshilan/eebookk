@@ -1,4 +1,4 @@
-/** 主进程 / preload / 渲染进程共用的数据结构 */
+﻿/** 主进程 / preload / 渲染进程共用的数据结构 */
 
 export interface Book {
   id: number
@@ -208,6 +208,8 @@ export interface AppSettings {
   device: DeviceSettings
   /** 外部书目源（OPDS），内置源默认带三条 */
   sources: BookSource[]
+  /** 全网元数据 / 封面检索 */
+  web: WebMetaSettings
 }
 
 /* ---------------- 收藏 / 书单 ---------------- */
@@ -311,6 +313,36 @@ export interface CatalogPage {
   items: CatalogItem[]
   next: string | null
   error?: string
+}
+
+/* ---------------- 全网元数据 / 封面检索 ---------------- */
+
+export interface WebMetaHit {
+  /** 来源标识：douban / neodb */
+  source: string
+  sourceName: string
+  /** 源内 id，回填详情用 */
+  id: string
+  title: string
+  authors: string
+  publisher: string
+  pubdate: string
+  isbn: string
+  language: string
+  rating: number | null
+  summary: string
+  coverUrl: string | null
+  /** 封面实际像素，用来让用户按清晰度挑 */
+  coverWidth: number | null
+  coverHeight: number | null
+  url: string
+}
+
+export interface WebMetaSettings {
+  /** 启用的来源 */
+  sources: string[]
+  /** 低于这个宽度的封面不参与挑选 */
+  minCoverWidth: number
 }
 
 /* ---------------- 事件推送 ---------------- */
